@@ -3,14 +3,54 @@ import pandas as pd
 import os
 from datetime import datetime
 
-# Import All Backend Modules
-from threat_intel import ThreatIntelProcessor
-from digital_forensics import DigitalForensicsAnalyzer
-from incident_response import IncidentResponder
-from soar_automation import SOARAutomation
-from threat_hunter import ThreatHunter
-from vulnerability_management import VulnerabilityManager
-from analyzer import ThreatAnalyzer
+# --- Safe Backend Modules Import (Fallback mechanism) ---
+try:
+    from threat_intel import ThreatIntelProcessor
+except ImportError:
+    class ThreatIntelProcessor:
+        def scan_target(self, t): return {"error": "Module threat_intel not found"}
+        def deep_bug_bounty_scan(self, d): return {"error": "Module threat_intel not found"}
+
+try:
+    from digital_forensics import DigitalForensicsAnalyzer
+except ImportError:
+    class DigitalForensicsAnalyzer:
+        def parse_text_artifacts(self, t): return {"status": "Module digital_forensics not found"}
+
+try:
+    from incident_response import IncidentResponder
+except ImportError:
+    class IncidentResponder:
+        def create_incident_ticket(self, t, s, d): return {"status": "Module incident_response not found"}
+
+try:
+    from soar_automation import SOARAutomation
+except ImportError:
+    class SOARAutomation:
+        pass
+
+try:
+    from threat_hunting import ThreatHunter
+except ImportError:
+    try:
+        from threat_hunter import ThreatHunter
+    except ImportError:
+        class ThreatHunter:
+            def hunt_powershell_obfuscation(self, s): return {"status": "Threat hunter module missing"}
+
+try:
+    from vulnerability_management import VulnerabilityManager
+except ImportError:
+    class VulnerabilityManager:
+        def calculate_cvss_score(self, s): return {"status": "Module missing"}
+
+try:
+    from analyzer import ThreatAnalyzer
+except ImportError:
+    class ThreatAnalyzer:
+        def detect_sql_injection(self, q): return {"status": "Missing"}
+        def detect_xss(self, p): return {"status": "Missing"}
+
 
 class SOCDashboardUI:
 
@@ -18,7 +58,7 @@ class SOCDashboardUI:
         self.app_name = "MHZALY Enterprise SOC & Threat Hunting Platform"
         self.version = "8.0 Pro Ultimate"
         
-        # Initialize Engines
+        # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
         self.forensics = DigitalForensicsAnalyzer()
         self.incident_engine = IncidentResponder()
