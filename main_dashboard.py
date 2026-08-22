@@ -97,7 +97,8 @@ class SOCDashboardUI:
     def display_raw_logs_table(self):
         st.subheader("Raw Log Events")
         df = pd.DataFrame({"Timestamp": ["2026-08-22 10:00"] * 5, "Source": (["Firewall", "EDR", "AD"] * 2)[:5]})
-st.dataframe(df)
+        st.dataframe(df)
+
     def display_parsed_log_details(self):
         st.json({"event.action": "logged-in", "user.name": "admin", "source.ip": "192.168.1.50"})
 
