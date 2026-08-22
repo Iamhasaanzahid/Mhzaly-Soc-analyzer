@@ -18,7 +18,7 @@ class ThreatIntelProcessor:
         self.osint_cache = {}
         self.vt_api_key = os.getenv("VT_API_KEY") # Hidden API Key
 
-    # --- REAL API FEATURE: VirusTotal IP Check ---
+    # --- REAL API FEATURE: VirusTotal IP Check with Vendor Details ---
     def check_ip_virustotal(self, ip_address):
         if not self.vt_api_key or self.vt_api_key == "apni_virustotal_api_key_yahan_paste_karein":
             return {"error": "API Key missing! Please add VT_API_KEY in .env file."}
@@ -33,14 +33,21 @@ class ThreatIntelProcessor:
             response = requests.get(url, headers=headers)
             if response.status_code == 200:
                 data = response.json()
-                stats = data['data']['attributes']['last_analysis_stats']
+                attributes = data['data']['attributes']
+                stats = attributes['last_analysis_stats']
+                results = attributes.get('last_analysis_results', {})
+                
+                # Extracting which security vendors flagged it as malicious
+                malicious_vendors = {k: v['result'] for k, v in results.items() if v.get('category') == 'malicious'}
+                
                 return {
                     "target": ip_address,
                     "malicious": stats.get('malicious', 0),
                     "suspicious": stats.get('suspicious', 0),
                     "harmless": stats.get('harmless', 0),
                     "undetected": stats.get('undetected', 0),
-                    "owner": data['data']['attributes'].get('as_owner', 'Unknown')
+                    "owner": attributes.get('as_owner', 'Unknown'),
+                    "malicious_vendors": malicious_vendors
                 }
             elif response.status_code == 401:
                 return {"error": "Invalid API Key. Please check your .env file."}
@@ -49,7 +56,7 @@ class ThreatIntelProcessor:
         except Exception as e:
             return {"error": str(e)}
 
-    # --- NEW REAL API FEATURE: VirusTotal Domain/URL Check ---
+    # --- REAL API FEATURE: VirusTotal Domain/URL Check with Vendor Details ---
     def check_domain_virustotal(self, domain):
         if not self.vt_api_key or self.vt_api_key == "apni_virustotal_api_key_yahan_paste_karein":
             return {"error": "API Key missing! Please add VT_API_KEY in .env file."}
@@ -67,14 +74,21 @@ class ThreatIntelProcessor:
             response = requests.get(url, headers=headers)
             if response.status_code == 200:
                 data = response.json()
-                stats = data['data']['attributes']['last_analysis_stats']
+                attributes = data['data']['attributes']
+                stats = attributes['last_analysis_stats']
+                results = attributes.get('last_analysis_results', {})
+                
+                # Extracting which security vendors flagged it as malicious
+                malicious_vendors = {k: v['result'] for k, v in results.items() if v.get('category') == 'malicious'}
+                
                 return {
                     "target": domain,
                     "malicious": stats.get('malicious', 0),
                     "suspicious": stats.get('suspicious', 0),
                     "harmless": stats.get('harmless', 0),
                     "undetected": stats.get('undetected', 0),
-                    "owner": data['data']['attributes'].get('registrar', 'Unknown')
+                    "owner": attributes.get('registrar', 'Unknown'),
+                    "malicious_vendors": malicious_vendors
                 }
             elif response.status_code == 401:
                 return {"error": "Invalid API Key. Please check your .env file."}
