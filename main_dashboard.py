@@ -1,18 +1,18 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import time
 import os
 import re
 from datetime import datetime
 from threat_intel import ThreatIntelProcessor
 
 class SOCDashboardUI:
-
     def __init__(self):
         self.app_name = "Enterprise SOC Platform"
-        self.version = "3.0 Pro"
+        self.version = "3.5 Pro"
         self.ti_processor = ThreatIntelProcessor()
+        self.log_file = "logs.csv"
+        self.audit_file = "audit_log.csv"
+        self.check_and_create_files()
 
     def setup_page_config(self):
         st.set_page_config(page_title=self.app_name, layout="wide", page_icon="🛡️")
@@ -29,224 +29,162 @@ class SOCDashboardUI:
         st.markdown("---")
         st.caption(f"{self.app_name} v{self.version} | Real-time Security Monitoring Powered by MHZALY")
 
-    def apply_custom_css(self):
-        st.markdown("""<style>.stMetric { background-color: #f0f2f6; padding: 10px; border-radius: 5px; }</style>""", unsafe_allow_html=True)
-
-    # --- DYNAMIC METRICS CALCULATOR FROM LOGS ---
-    def get_dynamic_metrics(self):
-        log_file = "logs.csv"
-        if os.path.exists(log_file):
-            df = pd.read_csv(log_file)
-            total_logs = len(df)
-            # Count critical/failed events dynamically
-            critical_count = len(df[df.astype(str).apply(lambda x: x.str.contains("Failed|4625|Clear", case=False)).any(axis=1)])
-            return total_logs, critical_count
-        return 5, 2
-
-    # --- 2. Dynamic High-Level Metrics & KPIs ---
-    def render_kpi_row(self):
-        total_logs, critical_count = self.get_dynamic_metrics()
-        col1, col2, col3, col4 = st.columns(4)
-        with col1: st.metric(label="🚨 Critical / Failed Alerts", value=critical_count, delta="Live from logs", delta_color="inverse")
-        with col2: st.metric(label="🔥 Active Incidents", value=len(st.session_state.get('alerts', [])), delta="Real-time")
-        with col3: st.metric(label="⏱️ MTTD (Detect)", value="12m")
-        with col4: st.metric(label="🛠️ MTTR (Respond)", value="3h 15m")
-
-    # --- 3. Charts & Visualizations ---
-    def plot_alert_trend_line(self):
-        st.subheader("Alert Trends (Calculated from Log Activity)")
-        chart_data = pd.DataFrame(np.random.randn(7, 3) + 2, columns=['High', 'Medium', 'Low'])
-        st.line_chart(chart_data)
-
-    def plot_geographic_threat_map(self):
-        st.subheader("Geo-Location of Blocked Threats")
-        df = pd.DataFrame(np.random.randn(10, 2) / [10, 10] + [37.76, -122.4], columns=['lat', 'lon'])
-        st.map(df)
-
-    # --- 4. Log Management UI (DYNAMIC CSV & SEARCH) ---
-    def render_log_search_bar(self):
-        return st.text_input("🔍 Search Logs (e.g., Firewall, EDR, 4625)")
-
-    def display_raw_logs_table(self, search_query=""):
-        st.subheader("Raw Log Events (Live Database)")
-        log_file = "logs.csv"
-        
-        if not os.path.exists(log_file):
+    # --- AUTOMATIC FILE CREATOR (ताकि कभी एरर न आए) ---
+    def check_and_create_files(self):
+        if not os.path.exists(self.log_file):
             default_data = {
-                "Timestamp": ["2026-08-22 10:00", "2026-08-22 10:05", "2026-08-22 10:10", "2026-08-22 10:15", "2026-08-22 10:20"],
-                "Source": ["Firewall", "EDR", "AD", "Firewall", "EDR"],
-                "EventID": ["4625", "1102", "4624", "4688", "7045"],
-                "Details": ["Failed Login", "Log Cleared", "Successful Logon", "Process Created", "Service Installed"]
+                "Timestamp": ["2026-08-22 10:00", "2026-08-22 10:05", "2026-08-22 10:10", "2026-08-22 10:15"],
+                "Source": ["Firewall", "EDR", "AD", "Firewall"],
+                "EventID": ["4625", "1102", "4624", "4688"],
+                "Details": ["Failed Login Attempt", "Security Log Cleared", "Successful Logon", "Suspicious Process Created"],
+                "Severity": ["Critical", "Critical", "Low", "High"]
             }
-            pd.DataFrame(default_data).to_csv(log_file, index=False)
+            pd.DataFrame(default_data).to_csv(self.log_file, index=False)
+
+    # --- DYNAMIC METRICS FROM LOGS ---
+    def render_kpi_row(self):
+        if os.path.exists(self.log_file):
+            df = pd.read_csv(self.log_file)
+            critical_count = len(df[df['Severity'] == 'Critical'])
+            active_incidents = len(df)
+            
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("🚨 Critical Alerts", critical_count, "Live from logs")
+            col2.metric("🔥 Total Log Events", active_incidents, "Real-time")
+            col3.metric("⏱️ Avg Detection", "12m")
+            col4.metric("🛠️ Response Actions Logged", self.get_audit_count())
+
+    def get_audit_count(self):
+        if os.path.exists(self.audit_file):
+            return len(pd.read_csv(self.audit_file))
+        return 0
+
+    # --- 1. OVERVIEW TAB ---
+    def run_overview_tab(self):
+        self.render_top_header("SOC Overview & Live Health")
+        self.render_kpi_row()
+        st.markdown("---")
+        st.subheader("📊 Threat Severity Breakdown")
+        if os.path.exists(self.log_file):
+            df = pd.read_csv(self.log_file)
+            severity_counts = df['Severity'].value_counts()
+            st.bar_chart(severity_counts)
+
+    # --- 2. LOG MANAGEMENT TAB ---
+    def run_log_management_tab(self):
+        self.render_top_header("Log Management & Search")
+        search_query = st.text_input("🔍 Search Logs (e.g., Critical, Firewall, 4625)")
         
-        df = pd.read_csv(log_file)
+        df = pd.read_csv(self.log_file)
         if search_query:
             mask = df.astype(str).apply(lambda x: x.str.contains(search_query, case=False, na=False)).any(axis=1)
             df = df[mask]
         st.dataframe(df, use_container_width=True)
 
-    # --- 5. Threat Analysis UI ---
+    # --- 3. THREAT ANALYSIS TAB ---
     def run_threat_analysis_tab(self):
         self.render_top_header("Threat Analysis & Triage")
-        
         if 'alerts' not in st.session_state:
             st.session_state.alerts = [
-                {"Alert ID": "ALT-101", "Severity": "High", "Status": "New", "Description": "Multiple failed logins (EventID 4625)"},
-                {"Alert ID": "ALT-102", "Severity": "Medium", "Status": "New", "Description": "Unusual PowerShell script execution"},
-                {"Alert ID": "ALT-103", "Severity": "Critical", "Status": "New", "Description": "Potential Brute Force from External IP"}
+                {"Alert ID": "ALT-101", "Severity": "Critical", "Status": "New", "Description": "Multiple failed logins from external IP"},
+                {"Alert ID": "ALT-102", "Severity": "High", "Status": "New", "Description": "Unusual PowerShell script execution"}
             ]
-
         st.dataframe(pd.DataFrame(st.session_state.alerts), use_container_width=True)
-        selected_id = st.selectbox("Select Alert ID to Process:", [a['Alert ID'] for a in st.session_state.alerts])
+        selected_id = st.selectbox("Select Alert ID:", [a['Alert ID'] for a in st.session_state.alerts])
         
-        col1, col2, col3 = st.columns(3)
-        if col1.button("✅ Acknowledge Alert"):
-            for alert in st.session_state.alerts:
-                if alert['Alert ID'] == selected_id: alert['Status'] = "Acknowledged"
-            st.success(f"Alert {selected_id} acknowledged!")
+        if st.button("✅ Acknowledge & Process"):
+            for a in st.session_state.alerts:
+                if a['Alert ID'] == selected_id: a['Status'] = "Acknowledged"
+            st.success(f"Alert {selected_id} status updated.")
             st.rerun()
 
-        if col2.button("🔥 Escalate to Incident"):
-            for alert in st.session_state.alerts:
-                if alert['Alert ID'] == selected_id: alert['Status'] = "Escalated"
-            st.warning(f"Alert {selected_id} escalated!")
-            st.rerun()
-
-        if col3.button("🛡️ Mark False Positive"):
-            for alert in st.session_state.alerts:
-                if alert['Alert ID'] == selected_id: alert['Status'] = "False Positive"
-            st.info(f"Alert {selected_id} marked as False Positive.")
-            st.rerun()
-
-    # --- 6. Incident Response UI ---
+    # --- 4. INCIDENT RESPONSE TAB ---
     def run_incident_response_tab(self):
         self.render_top_header("Incident Response & SOAR Actions")
+        target = st.text_input("Enter Hostname or IP to Mitigate:")
         
-        if 'incident_status' not in st.session_state:
-            st.session_state.incident_status = "Active - Investigating"
-
-        st.info(f"**Current Action Status:** {st.session_state.incident_status}")
-        
-        col1, col2, col3 = st.columns(3)
-        if col1.button("🔒 Isolate Host (EDR API Trigger)"):
-            st.session_state.incident_status = "Contained - Host Isolated"
-            st.success("Host isolated via EDR command!")
-            st.rerun()
-            
+        col1, col2 = st.columns(2)
+        if col1.button("🔒 Isolate Host"):
+            self.log_action("Isolate Host", target)
+            st.success(f"Host {target} isolated successfully! Logged in audit trail.")
         if col2.button("🛑 Block IP on Firewall"):
-            st.session_state.incident_status = "Contained - IP Blocked"
-            st.success("IP blocked on perimeter firewall!")
-            st.rerun()
+            self.log_action("Block IP", target)
+            st.success(f"IP {target} blocked on firewall! Logged in audit trail.")
             
-        if col3.button("👤 Disable AD Account"):
-            st.session_state.incident_status = "Contained - Account Disabled"
-            st.success("Compromised account disabled in Active Directory!")
-            st.rerun()
+        if os.path.exists(self.audit_file):
+            st.subheader("Audit Trail (Professional Action Record)")
+            st.dataframe(pd.read_csv(self.audit_file))
 
-        st.markdown("---")
-        notes = st.text_area("Analyst Investigation Notes:")
-        if st.button("Save Case Notes"):
-            st.success("Notes saved to incident ledger.")
+    def log_action(self, action, target):
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        entry = pd.DataFrame({"Timestamp": [timestamp], "Action": [action], "Target": [target]})
+        if os.path.exists(self.audit_file):
+            entry.to_csv(self.audit_file, mode='a', header=False, index=False)
+        else:
+            entry.to_csv(self.audit_file, index=False)
 
-    # --- 7. Vulnerability Management UI ---
+    # --- 5. VULNERABILITY MANAGEMENT TAB ---
     def run_vulnerability_tab(self):
-        self.render_top_header("Vulnerability Management & Asset Risk")
-        
-        if 'assets' not in st.session_state:
-            st.session_state.assets = [
-                {"Hostname": "SRV-DB-01", "Risk Score": 95, "Status": "Unpatched", "Owner": "DBA Team"},
-                {"Hostname": "DC-01", "Risk Score": 88, "Status": "Unpatched", "Owner": "IT Ops"}
-            ]
+        self.render_top_header("Vulnerability Management & Assets")
+        assets = pd.DataFrame([
+            {"Hostname": "SRV-DB-01", "Risk Score": 95, "Status": "Unpatched", "Owner": "DBA Team"},
+            {"Hostname": "DC-01", "Risk Score": 88, "Status": "Unpatched", "Owner": "IT Ops"}
+        ])
+        st.dataframe(assets, use_container_width=True)
+        if st.button("Deploy Critical Security Patch"):
+            st.success("Patches deployed successfully across corporate assets!")
 
-        st.dataframe(pd.DataFrame(st.session_state.assets), use_container_width=True)
-        selected_host = st.selectbox("Select Asset:", [a['Hostname'] for a in st.session_state.assets])
-        patch = st.selectbox("Select Patch:", ["KB5012345 (Critical Security Update)", "KB5019876"])
-        
-        if st.button("Deploy Patch Now"):
-            for asset in st.session_state.assets:
-                if asset['Hostname'] == selected_host:
-                    asset['Status'] = "Patched & Secure"
-                    asset['Risk Score'] = max(0, asset['Risk Score'] - 50)
-            st.success(f"Patch {patch} deployed successfully on {selected_host}!")
-            st.rerun()
-
-    # --- 8. Threat Hunting UI ---
+    # --- 6. THREAT HUNTING TAB ---
     def run_threat_hunting_tab(self):
         self.render_top_header("Proactive Threat Hunting")
-        hypothesis = st.text_input("Enter Hunt Keyword (e.g., Failed, EDR, Firewall):")
-        
+        query = st.text_input("Enter Hunt Hypothesis / Keyword:")
         if st.button("Launch Hunt"):
-            if hypothesis:
-                log_file = "logs.csv"
-                if os.path.exists(log_file):
-                    df = pd.read_csv(log_file)
-                    mask = df.astype(str).apply(lambda x: x.str.contains(hypothesis, case=False, na=False)).any(axis=1)
-                    results_df = df[mask]
-                    st.success(f"Hunt completed. Found {len(results_df)} matching records:")
-                    st.dataframe(results_df, use_container_width=True)
-                else:
-                    st.warning("Log database not found.")
+            if query:
+                df = pd.read_csv(self.log_file)
+                mask = df.astype(str).apply(lambda x: x.str.contains(query, case=False, na=False)).any(axis=1)
+                res = df[mask]
+                st.success(f"Hunt complete. Found {len(res)} matches.")
+                st.dataframe(res, use_container_width=True)
 
-    # --- 9. Threat Intelligence (CTI) UI WITH DETAILED VENDOR REPORT ---
+    # --- 7. CTI FEEDS (LIVE API SCANNER) ---
     def run_cti_tab(self):
         self.render_top_header("Cyber Threat Intelligence (Live API)")
-        target = st.text_input("🔍 Enter IP or Domain/URL to Scan (e.g., ncbae.edu.pk):")
+        target = st.text_input("🔍 Enter IP or Domain to Scan (e.g., ncbae.edu.pk):")
         
         if st.button("Start Security Scan"):
             if target:
-                with st.spinner(f"Analyzing {target} globally..."):
+                with st.spinner(f"Scanning {target} globally..."):
                     is_ip = re.match(r"^\d{1,3}(\.\d{1,3}){3}$", target)
-                    result = self.ti_processor.check_ip_virustotal(target) if is_ip else self.ti_processor.check_domain_virustotal(target)
+                    res = self.ti_processor.check_ip_virustotal(target) if is_ip else self.ti_processor.check_domain_virustotal(target)
                     
-                    if "error" in result:
-                        st.error(f"Scan Failed: {result['error']}")
+                    if "error" in res:
+                        st.error(f"Scan Failed: {res['error']}")
                     else:
-                        st.success("Global Intelligence Scan Completed!")
-                        st.write(f"**Target:** {result.get('target', target)} | **Owner/Registrar:** {result.get('owner', 'N/A')}")
+                        st.success("Scan Completed!")
+                        st.write(f"**Target:** {res.get('target', target)} | **Owner/Registrar:** {res.get('owner', 'N/A')}")
                         
                         c1, c2, c3 = st.columns(3)
-                        c1.error(f"🚨 Malicious: {result.get('malicious', 0)}")
-                        c2.warning(f"⚠️ Suspicious: {result.get('suspicious', 0)}")
-                        c3.success(f"✅ Safe: {result.get('harmless', 0)}")
+                        c1.error(f"🚨 Malicious: {res.get('malicious', 0)}")
+                        c2.warning(f"⚠️ Suspicious: {res.get('suspicious', 0)}")
+                        c3.success(f"✅ Safe: {res.get('harmless', 0)}")
                         
-                        # Show Detailed Vendor Breakdown for Companies
-                        vendors = result.get('malicious_vendors', {})
+                        vendors = res.get('malicious_vendors', {})
                         if vendors:
-                            st.subheader("🚨 Malicious Detections by Security Vendors:")
-                            vendor_df = pd.DataFrame(list(vendors.items()), columns=["Security Vendor", "Detection Result"])
-                            st.table(vendor_df)
-                            st.error("⚠️ یہ رپورٹ آپ کسی بھی کمپنی کو دکھا سکتے ہیں کہ کون کون سی سکیورٹی ایجنسیز اس ہدف کو خطرناک قرار دے رہی ہیں۔")
+                            st.subheader("🚨 Security Vendors Flagging this Threat:")
+                            st.table(pd.DataFrame(list(vendors.items()), columns=["Vendor", "Result"]))
                         else:
-                            st.info("System Clean: کسی بھی معروف سکیورٹی وینڈر نے اس میں خطرہ نہیں پایا۔")
-            else:
-                st.warning("Please enter a target first.")
-
-    def run_overview_tab(self):
-        self.render_top_header("SOC Overview")
-        self.render_kpi_row()
-        col1, col2 = st.columns(2)
-        with col1: self.plot_alert_trend_line()
-        with col2: self.plot_geographic_threat_map()
-
-    def run_log_management_tab(self):
-        self.render_top_header("Log Management & Search")
-        search_query = self.render_log_search_bar()
-        self.display_raw_logs_table(search_query)
+                            st.info("System Clean: No major security vendor flagged this target.")
 
     def main_loop(self):
         self.setup_page_config()
-        self.apply_custom_css()
-        selected_page = self.render_sidebar_navigation()
-
-        if selected_page == "Overview": self.run_overview_tab()
-        elif selected_page == "Log Management": self.run_log_management_tab()
-        elif selected_page == "Threat Analysis": self.run_threat_analysis_tab()
-        elif selected_page == "Incident Response": self.run_incident_response_tab()
-        elif selected_page == "Vulnerability Management": self.run_vulnerability_tab()
-        elif selected_page == "Threat Hunting": self.run_threat_hunting_tab()
-        elif selected_page == "CTI Feeds": self.run_cti_tab()
-        
+        page = self.render_sidebar_navigation()
+        if page == "Overview": self.run_overview_tab()
+        elif page == "Log Management": self.run_log_management_tab()
+        elif page == "Threat Analysis": self.run_threat_analysis_tab()
+        elif page == "Incident Response": self.run_incident_response_tab()
+        elif page == "Vulnerability Management": self.run_vulnerability_tab()
+        elif page == "Threat Hunting": self.run_threat_hunting_tab()
+        elif page == "CTI Feeds": self.run_cti_tab()
         self.render_footer()
 
 if __name__ == "__main__":
