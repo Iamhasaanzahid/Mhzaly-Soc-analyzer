@@ -1,13 +1,14 @@
 import streamlit as st
 import pandas as pd
 import os
+from datetime import datetime
 from threat_intel import ThreatIntelProcessor
 
 class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Real-World SOC & Bug Bounty Platform"
-        self.version = "6.2 Pro"
+        self.version = "6.3 Pro"
         self.processor = ThreatIntelProcessor()
 
     def setup_page_config(self):
@@ -24,7 +25,7 @@ class SOCDashboardUI:
     def run_overview(self):
         st.title("🛡️ MHZALY Real-World Cyber Defense Platform")
         st.markdown("---")
-        st.info("خوش آمدید! یہ پلیٹ فارم اب فرضی یا ڈمی ڈیٹا پر نہیں بلکہ **اصلی گلوبل انٹیلی جنس اور ڈیپ ویب سکیننگ** پر کام کرتا ہے۔ سائیڈ بار سے آپشن منتخب کریں۔")
+        st.info("خوش آمدید! یہ پلیٹ فارم اب اصلی گلوبل انٹیلی جنس اور ڈیپ ویب سکیننگ پر کام کرتا ہے۔ سائیڈ بار سے آپشن منتخب کریں۔")
 
     # --- 1. GLOBAL THREAT INTEL TAB ---
     def run_threat_intel(self):
@@ -53,10 +54,10 @@ class SOCDashboardUI:
                             st.subheader("🚨 Flagged by Security Vendors:")
                             st.table(pd.DataFrame(list(malicious_vendors.items()), columns=["Vendor", "Finding"]))
 
-    # --- 2. DEEP BUG BOUNTY SCANNER TAB (NEW & REALISTIC) ---
+    # --- 2. DEEP BUG BOUNTY SCANNER TAB ---
     def run_bug_bounty_scanner(self):
         st.title("🔍 Deep Bug Bounty & Security Header Analyzer")
-        st.markdown("یہ ٹول ہدف کی ویب سائٹ کی گہرائی میں جا کر اس کے **سکیورٹی ہیڈرز اور کمزوریاں (Missing Security Headers)** تلاش کرتا ہے — جو ایک اصلی بگ باؤنٹی ہنٹر کا پہلا قدم ہوتا ہے:")
+        st.markdown("یہ ٹول ہدف کی ویب سائٹ کی گہرائی میں جا کر اس کے سکیورٹی ہیڈرز اور مسنگ پروٹیکشنز تلاش کرتا ہے:")
         
         domain = st.text_input("Enter Target Domain (e.g., ncbae.edu.pk or example.com):")
         
@@ -77,9 +78,9 @@ class SOCDashboardUI:
                             st.subheader(f"⚠️ Found {len(findings)} Security Vulnerabilities / Missing Protections:")
                             df_findings = pd.DataFrame(findings)
                             st.dataframe(df_findings, use_container_width=True)
-                            st.warning("💡 آپ ان خامیوں کی بنیاد پر متعلقہ کمپنی یا ایڈمن کو ایک پروفیشنل **Security Vulnerability Disclosure Report** بھیج سکتے ہیں تاکہ وہ اپنی سکیورٹی بہتر کر سکیں!")
+                            st.warning("💡 آپ ان خامیوں کی بنیاد پر متعلقہ کمپنی یا ایڈمن کو ایک پروفیشنل سکیورٹی رپورٹ بھیج سکتے ہیں!")
                         else:
-                            st.info("✨ زبردست! اس ہدف پر کوئی بنیادی مسنگ ہیڈر یا کمزوری نہیں پائی گئی۔ سکیورٹی بہترین ہے۔")
+                            st.info("✨ زبردست! اس ہدف پر کوئی بنیادی مسنگ ہیڈر یا کمزوری نہیں پائی گئی۔")
             else:
                 st.warning("Please enter a domain name.")
 
@@ -94,7 +95,7 @@ class SOCDashboardUI:
         if st.button("Log Evidence & Generate Report"):
             if scam_target:
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                audit_df = pd.DataFrame({"Timestamp": [timestamp], "Target": [scam_target], "Notes": [evidence_notes], "Status": [“Logged & Reported”]})
+                audit_df = pd.DataFrame({"Timestamp": [timestamp], "Target": [scam_target], "Notes": [evidence_notes], "Status": ["Logged & Reported"]})
                 
                 file_name = "incident_reports.csv"
                 if os.path.exists(file_name):
@@ -102,7 +103,7 @@ class SOCDashboardUI:
                 else:
                     audit_df.to_csv(file_name, index=False)
                     
-                st.success("Successfully logged into corporate incident ledger! You are helping build a safer internet.")
+                st.success("Successfully logged into corporate incident ledger!")
                 if os.path.exists(file_name):
                     st.subheader("Saved Incident Reports:")
                     st.dataframe(pd.read_csv(file_name), use_container_width=True)
