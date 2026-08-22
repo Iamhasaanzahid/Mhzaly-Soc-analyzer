@@ -2,20 +2,38 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
+
+# Import All Backend Modules
 from threat_intel import ThreatIntelProcessor
+from digital_forensics import DigitalForensicsAnalyzer
+from incident_response import IncidentResponder
+from soar_automation import SOARAutomation
+from threat_hunter import ThreatHunter
+from vulnerability_management import VulnerabilityManager
+from analyzer import ThreatAnalyzer
 
 class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Hunting Platform"
-        self.version = "7.0 Pro Ultimate"
+        self.version = "8.0 Pro Ultimate"
+        
+        # Initialize Engines
         self.processor = ThreatIntelProcessor()
+        self.forensics = DigitalForensicsAnalyzer()
+        self.incident_engine = IncidentResponder()
+        self.soar = SOARAutomation()
+        self.hunter = ThreatHunter()
+        self.vuln_mgr = VulnerabilityManager()
+        self.analyzer = ThreatAnalyzer()
 
     def setup_page_config(self):
         st.set_page_config(page_title=self.app_name, layout="wide", page_icon="🛡️")
 
     def render_sidebar(self):
         st.sidebar.title("🛡️ SOC Command Center")
+        st.sidebar.markdown(f"**Version:** {self.version}")
+        st.sidebar.markdown("---")
         return st.sidebar.radio("Navigation Menu", [
             "Overview & Dashboard",
             "Global Threat Intel (VirusTotal)", 
@@ -23,16 +41,18 @@ class SOCDashboardUI:
             "Threat Hunting & IOCs",
             "Digital Forensics & Logs",
             "Incident Response & SOAR",
+            "Vulnerability Management",
+            "Threat Analyzer (SQLi/XSS)",
             "Live Incident Defense & Reporting"
         ])
 
     def run_overview(self):
         st.title("🛡️ MHZALY Enterprise Cyber Defense Platform")
         st.markdown("---")
-        st.success("خوش آمدید! یہ آپ کا مکمل SOC پلیٹ فارم ہے جہاں تمام بیک اینڈ سکیورٹی ماڈیولز (Threat Intel, Bug Bounty, Forensics, SOAR) ایک ہی جگہ پر لائیو کام کر رہے ہیں۔")
+        st.success("خوش آمدید! یہ آپ کا مکمل اور رئیل ورلڈ SOC پلیٹ فارم ہے جہاں تمام بیک اینڈ سکیورٹی ماڈیولز اب فعال طریقے سے کام کر رہے ہیں۔")
         
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Active Modules", "12+", "Fully Integrated")
+        col1.metric("Active Modules", "8 Core Engines", "Fully Integrated")
         col2.metric("SOC Status", "Online", "Protected")
         col3.metric("Platform Version", self.version, "Stable")
         col4.metric("Analyst", "M. Hassaan Zahid", "Lead SOC")
@@ -97,33 +117,68 @@ class SOCDashboardUI:
     # --- 3. THREAT HUNTING ---
     def run_threat_hunting(self):
         st.title("🎯 Proactive Threat Hunting & IOC Analysis")
-        st.markdown("نیٹ ورک ٹریفک یا لاگز میں سے مشکوک انڈیکیٹرز آف کمپرومائز (IOCs) تلاش کریں:")
-        ioc_input = st.text_area("Paste Raw Logs or Payload to Extract IPs/Domains/Hashes:")
-        if st.button("Extract & Hunt IOCs"):
-            st.info("Scanning payload against built-in threat intelligence signatures...")
-            st.success("Hunting completed. No malicious patterns detected in the current buffer.")
+        st.markdown("پاورشیل سکرپٹس یا پے لوڈ میں چھپے ہوئے خطرات (Obfuscation) کی جانچ کریں:")
+        
+        script_input = st.text_area("Paste PowerShell script or payload to check:")
+        if st.button("Hunt Payload"):
+            if script_input:
+                res = self.hunter.hunt_powershell_obfuscation(script_input)
+                st.write(res)
+            else:
+                st.warning("Please enter a payload.")
 
     # --- 4. DIGITAL FORENSICS ---
     def run_digital_forensics(self):
         st.title("🔎 Digital Forensics & Log Artifacts")
-        st.markdown("سسٹم کے ڈیجیٹل شواہد اور لاگ فائلز کا تجزیہ کریں:")
-        uploaded_file = st.file_uploader("Upload System Log or Evidence File (CSV/TXT):", type=["csv", "txt"])
-        if uploaded_file is not None:
-            df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_table(uploaded_file)
-            st.subheader("Uploaded Artifact Preview:")
-            st.dataframe(df, use_container_width=True)
-            st.success("Forensic parsing successful!")
+        st.markdown("سسٹم کے لاگز یا ٹیکسٹ سے شواہد (IPs, Emails) خود بخود نکالیں:")
+        
+        logs_input = st.text_area("Paste system logs or text:")
+        if st.button("Extract Forensic Evidence"):
+            if logs_input:
+                res = self.forensics.parse_text_artifacts(logs_input)
+                st.json(res)
+            else:
+                st.warning("Please provide log text.")
 
     # --- 5. INCIDENT RESPONSE & SOAR ---
     def run_incident_response(self):
         st.title("⚡ Incident Response & Automated SOAR Playbooks")
-        st.markdown("سکیورٹی انسیڈنٹس پر آٹومیٹڈ رسپانس پلے بکس چلائیں:")
-        incident_type = st.selectbox("Select Playbook:", ["Isolate Host", "Block Malicious IP", "Revoke Compromised Session", "Quarantine Malware File"])
-        if st.button("Execute Playbook"):
-            st.warning(f"Executing automated playbook: {incident_type}...")
-            st.success(f"Playbook successfully executed across corporate nodes!")
+        st.markdown("سکیورٹی انسیڈنٹس پر ٹکٹ بنائیں اور پلے بکس رن کریں:")
+        
+        target = st.text_input("Incident Target / Host:")
+        severity = st.selectbox("Severity Level", ["LOW", "MEDIUM", "HIGH", "CRITICAL"])
+        desc = st.text_area("Incident Description:")
+        
+        if st.button("Create Incident Ticket"):
+            if target:
+                res = self.incident_engine.create_incident_ticket(target, severity, desc)
+                st.success("Ticket Generated!")
+                st.json(res)
+            else:
+                st.warning("Please enter target.")
 
-    # --- 6. LIVE INCIDENT DEFENSE & REPORTING ---
+    # --- 6. VULNERABILITY MANAGEMENT ---
+    def run_vulnerability_management(self):
+        st.title("📊 Vulnerability & CVSS Assessment")
+        score = st.slider("CVSS Base Score", 0.0, 10.0, 7.5)
+        if st.button("Calculate Severity & Risk"):
+            res = self.vuln_mgr.calculate_cvss_score(score)
+            st.json(res)
+
+    # --- 7. THREAT ANALYZER (SQLi / XSS) ---
+    def run_threat_analyzer(self):
+        st.title("🔬 Threat & Attack Analyzer (SQLi / XSS)")
+        payload = st.text_input("Enter query string or payload to inspect:")
+        if st.button("Analyze Payload"):
+            if payload:
+                sqli = self.analyzer.detect_sql_injection(payload)
+                xss = self.analyzer.detect_xss(payload)
+                st.write("**SQL Injection Check:**", sqli)
+                st.write("**XSS Check:**", xss)
+            else:
+                st.warning("Please enter a payload.")
+
+    # --- 8. LIVE INCIDENT DEFENSE & REPORTING ---
     def run_incident_defense(self):
         st.title("📝 Incident Defense & Evidence Ledger")
         st.markdown("مشکوک یا سکیمنگ ویب سائٹ کے خلاف ثبوت درج کریں اور آڈٹ فائل میں محفوظ کریں:")
@@ -159,6 +214,8 @@ class SOCDashboardUI:
         elif choice == "Threat Hunting & IOCs": self.run_threat_hunting()
         elif choice == "Digital Forensics & Logs": self.run_digital_forensics()
         elif choice == "Incident Response & SOAR": self.run_incident_response()
+        elif choice == "Vulnerability Management": self.run_vulnerability_management()
+        elif choice == "Threat Analyzer (SQLi/XSS)": self.run_threat_analyzer()
         elif choice == "Live Incident Defense & Reporting": self.run_incident_defense()
 
 if __name__ == "__main__":
