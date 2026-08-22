@@ -2,6 +2,12 @@ import json
 import re
 import uuid
 from datetime import datetime
+import requests
+import os
+from dotenv import load_dotenv
+
+# Load secret keys from .env file
+load_dotenv()
 
 class ThreatIntelProcessor:
 
@@ -10,6 +16,38 @@ class ThreatIntelProcessor:
         self.ioc_database = {}
         self.threat_actors = {}
         self.osint_cache = {}
+        self.vt_api_key = os.getenv("VT_API_KEY") # Hidden API Key
+
+    # --- NEW REAL API FEATURE: VirusTotal IP Check ---
+    def check_ip_virustotal(self, ip_address):
+        if not self.vt_api_key or self.vt_api_key == "apni_virustotal_api_key_yahan_paste_karein":
+            return {"error": "API Key missing! Please add VT_API_KEY in .env file."}
+        
+        url = f"https://www.virustotal.com/api/v3/ip_addresses/{ip_address}"
+        headers = {
+            "accept": "application/json",
+            "x-apikey": self.vt_api_key
+        }
+        
+        try:
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                stats = data['data']['attributes']['last_analysis_stats']
+                return {
+                    "ip": ip_address,
+                    "malicious": stats.get('malicious', 0),
+                    "suspicious": stats.get('suspicious', 0),
+                    "harmless": stats.get('harmless', 0),
+                    "undetected": stats.get('undetected', 0),
+                    "owner": data['data']['attributes'].get('as_owner', 'Unknown')
+                }
+            elif response.status_code == 401:
+                return {"error": "Invalid API Key. Please check your .env file."}
+            else:
+                return {"error": f"Error {response.status_code}: IP not found or invalid."}
+        except Exception as e:
+            return {"error": str(e)}
 
     # --- 1. Threat Feed Ingestion (CTI) ---
     def ingest_stix_feed(self, file_path):
@@ -127,7 +165,7 @@ class ThreatIntelProcessor:
         return {"status": "Actor linked to specific cyber campaign."}
 
     def identify_actor_motivations(self, actor_id, motivation_type):
-        return {"status": "Actor motivation (e.g., Financial, Espionage) updated."}
+        return {"status": "Actor motivation updated."}
 
     def target_industry_mapping(self, actor_id, industry_sector):
         return {"status": "Target industry mapped to threat actor."}
