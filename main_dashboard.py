@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import time
+import os
+import re
 from datetime import datetime
 from threat_intel import ThreatIntelProcessor # Backend link kiya hai yahan
 
@@ -87,17 +89,33 @@ class SOCDashboardUI:
         df = pd.DataFrame(np.random.randn(10, 2) / [10, 10] + [37.76, -122.4], columns=['lat', 'lon'])
         st.map(df)
 
-    # --- 4. Log Management UI ---
+    # --- 4. Log Management UI (DYNAMIC CSV & SEARCH) ---
     def render_log_search_bar(self):
-        return st.text_input("🔍 Search Logs (e.g., EventID:4625 OR src_ip:10.0.0.5)")
+        return st.text_input("🔍 Search Logs (e.g., Firewall, EDR, 4625)")
 
-    def render_log_time_filter(self):
-        return st.selectbox("Time Range", ["Last 15 mins", "Last 1 hour", "Last 24 hours", "Last 7 days", "Custom"])
-
-    def display_raw_logs_table(self):
-        st.subheader("Raw Log Events")
-        df = pd.DataFrame({"Timestamp": ["2026-08-22 10:00"] * 5, "Source": (["Firewall", "EDR", "AD"] * 2)[:5]})
-        st.dataframe(df)
+    def display_raw_logs_table(self, search_query=""):
+        st.subheader("Raw Log Events (Dynamic Data)")
+        log_file = "logs.csv"
+        
+        # Agar logs.csv file nahi bani hui, toh yeh khud ba khud aik sample file bana dega
+        if not os.path.exists(log_file):
+            default_data = {
+                "Timestamp": ["2026-08-22 10:00", "2026-08-22 10:05", "2026-08-22 10:10", "2026-08-22 10:15", "2026-08-22 10:20"],
+                "Source": ["Firewall", "EDR", "AD", "Firewall", "EDR"],
+                "EventID": ["4625", "1102", "4624", "4688", "7045"],
+                "Details": ["Failed Login", "Log Cleared", "Successful Logon", "Process Created", "Service Installed"]
+            }
+            pd.DataFrame(default_data).to_csv(log_file, index=False)
+        
+        # CSV file se data read karein
+        df = pd.read_csv(log_file)
+        
+        # Agar user ne search bar me kuch likھا hai toh logs ko filter karein
+        if search_query:
+            mask = df.astype(str).apply(lambda x: x.str.contains(search_query, case=False, na=False)).any(axis=1)
+            df = df[mask]
+            
+        st.dataframe(df, use_container_width=True)
 
     def display_parsed_log_details(self):
         st.json({"event.action": "logged-in", "user.name": "admin", "source.ip": "192.168.1.50"})
@@ -160,39 +178,45 @@ class SOCDashboardUI:
         st.text_area("Paste YARA Rule Here")
         st.button("Run YARA Scan")
 
-    # --- 9. Threat Intelligence (CTI) UI - WITH REAL API SCANNER ---
+    # --- 9. Threat Intelligence (CTI) UI - WITH DOMAIN & IP SCANNER ---
     def display_threat_feed_status(self):
         st.subheader("Active Intel Feeds")
         st.write("✅ OTX AlienVault | ✅ MISP | ✅ AbuseIPDB | ✅ VirusTotal (Live)")
 
     def render_ioc_lookup_tool(self):
         st.markdown("### 🌐 Live Website & IP Scanner")
-        st.write("کسی بھی مشکوک ویب سائٹ کا آئی پی ایڈریس لکھیں (مثال کے طور پر 8.8.8.8) اور اصلی رپورٹ دیکھیں۔")
+        st.write("کسی بھی ویب سائٹ کا لنک (جیسے ncbae.edu.pk) یا آئی پی ایڈریس درج کریں اور اصلی رپورٹ دیکھیں۔")
         
-        target_ip = st.text_input("🔍 Enter IP Address to Scan:")
+        target = st.text_input("🔍 Enter IP or Domain/URL to Scan:")
         
         if st.button("Start Security Scan"):
-            if target_ip:
-                with st.spinner(f"Scanning {target_ip} globally..."):
-                    result = self.ti_processor.check_ip_virustotal(target_ip)
+            if target:
+                with st.spinner(f"Scanning {target} globally..."):
+                    # Check if input is a pure IPv4 address
+                    is_ip = re.match(r"^\d{1,3}(\.\d{1,3}){3}$", target)
+                    
+                    if is_ip:
+                        result = self.ti_processor.check_ip_virustotal(target)
+                    else:
+                        result = self.ti_processor.check_domain_virustotal(target)
                     
                     if "error" in result:
                         st.error(f"Scan Failed: {result['error']}")
                     else:
                         st.success("Scan Completed!")
-                        st.write(f"**IP Owner / ISP:** {result['owner']}")
+                        st.write(f"**Target / Owner:** {result.get('target', target)} ({result.get('owner', 'N/A')})")
                         
                         c1, c2, c3 = st.columns(3)
-                        c1.error(f"🚨 Malicious (Hacker): {result['malicious']}")
-                        c2.warning(f"⚠️ Suspicious (Shak): {result['suspicious']}")
-                        c3.success(f"✅ Safe (Harmless): {result['harmless']}")
+                        c1.error(f"🚨 Malicious: {result.get('malicious', 0)}")
+                        c2.warning(f"⚠️ Suspicious: {result.get('suspicious', 0)}")
+                        c3.success(f"✅ Safe: {result.get('harmless', 0)}")
                         
-                        if result['malicious'] > 0:
-                            st.error("DANGER: یہ آئی پی خطرناک ہے! ویب سائٹ کے مالک کو الرٹ کریں۔")
+                        if result.get('malicious', 0) > 0:
+                            st.error("DANGER: یہ ہدف خطرناک پایا گیا ہے!")
                         else:
-                            st.info("System Clean: یہ آئی پی بالکل محفوظ لگ رہا ہے۔")
+                            st.info("System Clean: یہ بالکل محفوظ ہے۔")
             else:
-                st.warning("Please enter an IP address first.")
+                st.warning("Please enter an IP or domain first.")
 
     # --- 10. Dashboard Controller (Main App Logic) ---
     def run_overview_tab(self):
@@ -204,8 +228,8 @@ class SOCDashboardUI:
 
     def run_log_management_tab(self):
         self.render_top_header("Log Management & Search")
-        self.render_log_search_bar()
-        self.display_raw_logs_table()
+        search_query = self.render_log_search_bar()
+        self.display_raw_logs_table(search_query)
 
     def run_threat_analysis_tab(self):
         self.render_top_header("Threat Analysis & Triage")
