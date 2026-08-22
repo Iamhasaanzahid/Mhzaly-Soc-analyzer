@@ -18,7 +18,7 @@ class ThreatIntelProcessor:
         self.osint_cache = {}
         self.vt_api_key = os.getenv("VT_API_KEY") # Hidden API Key
 
-    # --- NEW REAL API FEATURE: VirusTotal IP Check ---
+    # --- REAL API FEATURE: VirusTotal IP Check ---
     def check_ip_virustotal(self, ip_address):
         if not self.vt_api_key or self.vt_api_key == "apni_virustotal_api_key_yahan_paste_karein":
             return {"error": "API Key missing! Please add VT_API_KEY in .env file."}
@@ -35,7 +35,7 @@ class ThreatIntelProcessor:
                 data = response.json()
                 stats = data['data']['attributes']['last_analysis_stats']
                 return {
-                    "ip": ip_address,
+                    "target": ip_address,
                     "malicious": stats.get('malicious', 0),
                     "suspicious": stats.get('suspicious', 0),
                     "harmless": stats.get('harmless', 0),
@@ -46,6 +46,40 @@ class ThreatIntelProcessor:
                 return {"error": "Invalid API Key. Please check your .env file."}
             else:
                 return {"error": f"Error {response.status_code}: IP not found or invalid."}
+        except Exception as e:
+            return {"error": str(e)}
+
+    # --- NEW REAL API FEATURE: VirusTotal Domain/URL Check ---
+    def check_domain_virustotal(self, domain):
+        if not self.vt_api_key or self.vt_api_key == "apni_virustotal_api_key_yahan_paste_karein":
+            return {"error": "API Key missing! Please add VT_API_KEY in .env file."}
+        
+        # Clean domain/URL (Removes http://, https://, and trailing slashes)
+        domain = domain.replace("https://", "").replace("http://", "").strip("/").split("/")[0]
+        
+        url = f"https://www.virustotal.com/api/v3/domains/{domain}"
+        headers = {
+            "accept": "application/json",
+            "x-apikey": self.vt_api_key
+        }
+        
+        try:
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                stats = data['data']['attributes']['last_analysis_stats']
+                return {
+                    "target": domain,
+                    "malicious": stats.get('malicious', 0),
+                    "suspicious": stats.get('suspicious', 0),
+                    "harmless": stats.get('harmless', 0),
+                    "undetected": stats.get('undetected', 0),
+                    "owner": data['data']['attributes'].get('registrar', 'Unknown')
+                }
+            elif response.status_code == 401:
+                return {"error": "Invalid API Key. Please check your .env file."}
+            else:
+                return {"error": f"Error {response.status_code}: Domain not found or invalid."}
         except Exception as e:
             return {"error": str(e)}
 
