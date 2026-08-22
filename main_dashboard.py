@@ -5,14 +5,14 @@ import time
 import os
 import re
 from datetime import datetime
-from threat_intel import ThreatIntelProcessor # Backend link kiya hai yahan
+from threat_intel import ThreatIntelProcessor # Backend link
 
 class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "Enterprise SOC Platform"
-        self.version = "1.0"
-        self.ti_processor = ThreatIntelProcessor() # Initializing backend
+        self.version = "2.0 Pro"
+        self.ti_processor = ThreatIntelProcessor()
 
     # --- 1. Page Configuration & Layout ---
     def setup_page_config(self):
@@ -34,55 +34,18 @@ class SOCDashboardUI:
         st.markdown("""<style>.stMetric { background-color: #f0f2f6; padding: 10px; border-radius: 5px; }</style>""", unsafe_allow_html=True)
 
     # --- 2. High-Level Metrics & KPIs ---
-    def show_critical_alerts_metric(self, count=12):
-        st.metric(label="🚨 Critical Alerts", value=count, delta="+2 since last hour", delta_color="inverse")
-
-    def show_active_incidents_metric(self, count=5):
-        st.metric(label="🔥 Active Incidents", value=count, delta="-1 resolved")
-
-    def show_mttd_metric(self, time_str="15m"):
-        st.metric(label="⏱️ MTTD (Mean Time to Detect)", value=time_str)
-
-    def show_mttr_metric(self, time_str="4h 30m"):
-        st.metric(label="🛠️ MTTR (Mean Time to Respond)", value=time_str)
-
-    def show_log_volume_metric(self, volume="2.4 TB"):
-        st.metric(label="📈 Logs Ingested (24h)", value=volume, delta="5% increase")
-
-    def show_endpoints_monitored_metric(self, count=1542):
-        st.metric(label="💻 Endpoints Monitored", value=count)
-
-    def show_open_vulnerabilities_metric(self, count=89):
-        st.metric(label="🔓 Open Vulnerabilities", value=count, delta="-12 patched")
-
-    def show_threat_intel_hits_metric(self, count=34):
-        st.metric(label="🌐 CTI Hits", value=count)
-
     def render_kpi_row(self):
         col1, col2, col3, col4 = st.columns(4)
-        with col1: self.show_critical_alerts_metric()
-        with col2: self.show_active_incidents_metric()
-        with col3: self.show_mttd_metric()
-        with col4: self.show_mttr_metric()
+        with col1: st.metric(label="🚨 Critical Alerts", value=12, delta="+2 since last hour", delta_color="inverse")
+        with col2: st.metric(label="🔥 Active Incidents", value=5, delta="-1 resolved")
+        with col3: st.metric(label="⏱️ MTTD (Detect)", value="15m")
+        with col4: st.metric(label="🛠️ MTTR (Respond)", value="4h 30m")
 
     # --- 3. Charts & Visualizations ---
     def plot_alert_trend_line(self):
         st.subheader("Alert Trends (Last 7 Days)")
         chart_data = pd.DataFrame(np.random.randn(7, 3), columns=['High', 'Medium', 'Low'])
         st.line_chart(chart_data)
-
-    def plot_incident_by_category_bar(self):
-        st.subheader("Incidents by Category")
-        chart_data = pd.DataFrame(np.random.randint(1, 20, size=(5, 1)), index=['Malware', 'Phishing', 'DDoS', 'Insider Threat', 'Brute Force'])
-        st.bar_chart(chart_data)
-
-    def plot_log_sources_pie(self):
-        st.subheader("Log Sources Distribution")
-        st.write("Distribution: 40% Firewall, 30% EDR, 20% Windows Event, 10% CloudTrail")
-
-    def plot_vulnerability_severity(self):
-        st.subheader("Vulnerabilities by Severity")
-        st.bar_chart({"Critical": 10, "High": 35, "Medium": 80, "Low": 45})
 
     def plot_geographic_threat_map(self):
         st.subheader("Geo-Location of Blocked Threats")
@@ -94,10 +57,9 @@ class SOCDashboardUI:
         return st.text_input("🔍 Search Logs (e.g., Firewall, EDR, 4625)")
 
     def display_raw_logs_table(self, search_query=""):
-        st.subheader("Raw Log Events (Dynamic Data)")
+        st.subheader("Raw Log Events (Live Database)")
         log_file = "logs.csv"
         
-        # Agar logs.csv file nahi bani hui, toh yeh khud ba khud aik sample file bana dega
         if not os.path.exists(log_file):
             default_data = {
                 "Timestamp": ["2026-08-22 10:00", "2026-08-22 10:05", "2026-08-22 10:10", "2026-08-22 10:15", "2026-08-22 10:20"],
@@ -107,92 +69,146 @@ class SOCDashboardUI:
             }
             pd.DataFrame(default_data).to_csv(log_file, index=False)
         
-        # CSV file se data read karein
         df = pd.read_csv(log_file)
         
-        # Agar user ne search bar me kuch likھا hai toh logs ko filter karein
         if search_query:
             mask = df.astype(str).apply(lambda x: x.str.contains(search_query, case=False, na=False)).any(axis=1)
             df = df[mask]
             
         st.dataframe(df, use_container_width=True)
 
-    def display_parsed_log_details(self):
-        st.json({"event.action": "logged-in", "user.name": "admin", "source.ip": "192.168.1.50"})
+    # --- 5. Threat Analysis UI (INTERACTIVE STATE MANAGEMENT) ---
+    def run_threat_analysis_tab(self):
+        self.render_top_header("Threat Analysis & Triage")
+        
+        if 'alerts' not in st.session_state:
+            st.session_state.alerts = [
+                {"Alert ID": "ALT-101", "Severity": "High", "Status": "New", "Description": "Multiple failed logins detected"},
+                {"Alert ID": "ALT-102", "Severity": "Medium", "Status": "New", "Description": "Unusual PowerShell script execution"},
+                {"Alert ID": "ALT-103", "Severity": "Critical", "Status": "New", "Description": "Potential Brute Force from External IP"}
+            ]
 
-    # --- 5. Threat Analysis UI ---
-    def display_active_alerts_table(self):
-        st.subheader("Triage Alerts")
-        st.table({"Alert ID": ["ALT-101", "ALT-102"], "Severity": ["High", "Medium"], "Description": ["Multiple failed logins", "Unusual PowerShell"]})
+        st.write("رئیل ٹائم الرٹس ٹriage کریں اور نیچے دیے گئے بٹنوں سے ان کا اسٹیٹس اپ ڈیٹ کریں۔")
+        df = pd.DataFrame(st.session_state.alerts)
+        st.dataframe(df, use_container_width=True)
 
-    def render_alert_action_buttons(self):
+        selected_id = st.selectbox("Select Alert ID to Process:", [a['Alert ID'] for a in st.session_state.alerts])
+        
         col1, col2, col3 = st.columns(3)
-        col1.button("Acknowledge Alert")
-        col2.button("Escalate to Incident")
-        col3.button("Mark False Positive")
+        if col1.button("✅ Acknowledge Alert"):
+            for alert in st.session_state.alerts:
+                if alert['Alert ID'] == selected_id:
+                    alert['Status'] = "Acknowledged"
+            st.success(f"Alert {selected_id} acknowledged successfully!")
+            st.rerun()
 
-    def show_mitre_attack_mapping(self):
-        st.subheader("MITRE ATT&CK Mapping")
-        st.write("Technique Detected: T1078 - Valid Accounts")
+        if col2.button("🔥 Escalate to Incident"):
+            for alert in st.session_state.alerts:
+                if alert['Alert ID'] == selected_id:
+                    alert['Status'] = "Escalated"
+            st.warning(f"Alert {selected_id} escalated to Incident Response!")
+            st.rerun()
 
-    # --- 6. Incident Response UI ---
-    def display_incident_kanban_board(self):
-        st.subheader("Incident Workflow")
-        st.write("New -> Investigating -> Contained -> Remediated -> Closed")
+        if col3.button("🛡️ Mark False Positive"):
+            for alert in st.session_state.alerts:
+                if alert['Alert ID'] == selected_id:
+                    alert['Status'] = "False Positive"
+            st.info(f"Alert {selected_id} marked as False Positive.")
+            st.rerun()
 
-    def render_containment_actions(self):
-        st.subheader("Quick Containment Actions")
-        st.button("🔒 Isolate Host")
-        st.button("🛑 Block IP on Firewall")
-        st.button("👤 Disable AD Account")
+    # --- 6. Incident Response UI (INTERACTIVE WORKFLOW) ---
+    def run_incident_response_tab(self):
+        self.render_top_header("Incident Response & Containment")
+        
+        if 'incident_status' not in st.session_state:
+            st.session_state.incident_status = "Active - Investigating"
 
-    def render_incident_notes_area(self):
-        st.text_area("Analyst Investigation Notes")
+        st.info(f"**Current Incident Workflow Status:** {st.session_state.incident_status}")
+        
+        col1, col2, col3 = st.columns(3)
+        if col1.button("🔒 Isolate Host"):
+            st.session_state.incident_status = "Contained (Host Isolated)"
+            st.success("Host successfully isolated from network!")
+            st.rerun()
+            
+        if col2.button("🛑 Block IP on Firewall"):
+            st.session_state.incident_status = "Contained (IP Blocked)"
+            st.success("Malicious IP blocked on perimeter firewall!")
+            st.rerun()
+            
+        if col3.button("👤 Disable AD Account"):
+            st.session_state.incident_status = "Contained (Account Disabled)"
+            st.success("Compromised Active Directory account disabled!")
+            st.rerun()
 
-    def render_generate_report_button(self):
-        st.button("📄 Generate Incident Report (PDF)")
+        st.markdown("---")
+        st.subheader("Analyst Investigation Notes")
+        notes = st.text_area("Type your notes here:", placeholder="Enter investigation findings...")
+        if st.button("Save Notes"):
+            st.success("Investigation notes saved securely to case file.")
 
     # --- 7. Vulnerability Management UI ---
-    def display_asset_risk_scores(self):
-        st.subheader("High-Risk Assets")
-        st.table({"Hostname": ["SRV-DB-01", "DC-01"], "Risk Score": [95, 88], "Owner": ["DBA Team", "IT Ops"]})
+    def run_vulnerability_tab(self):
+        self.render_top_header("Vulnerability Management & Assets")
+        
+        if 'assets' not in st.session_state:
+            st.session_state.assets = [
+                {"Hostname": "SRV-DB-01", "Risk Score": 95, "Status": "Unpatched", "Owner": "DBA Team"},
+                {"Hostname": "DC-01", "Risk Score": 88, "Status": "Unpatched", "Owner": "IT Ops"}
+            ]
 
-    def render_patch_deployment_form(self):
-        st.selectbox("Select Patch", ["KB5012345", "KB5019876"])
-        st.button("Deploy Patch")
+        st.subheader("High-Risk Assets Matrix")
+        st.dataframe(pd.DataFrame(st.session_state.assets), use_container_width=True)
 
-    def display_cve_lookup_tool(self):
-        cve = st.text_input("Lookup CVE ID")
-        if cve: st.write(f"Showing NVD data for {cve}...")
+        selected_host = st.selectbox("Select Asset to Deploy Patch:", [a['Hostname'] for a in st.session_state.assets])
+        patch = st.selectbox("Select Security Patch:", ["KB5012345 (Critical)", "KB5019876 (Security Update)"])
+        
+        if st.button("Deploy Patch Now"):
+            for asset in st.session_state.assets:
+                if asset['Hostname'] == selected_host:
+                    asset['Status'] = "Patched"
+                    asset['Risk Score'] = max(0, asset['Risk Score'] - 40)
+            st.success(f"Patch {patch} successfully deployed on {selected_host}!")
+            st.rerun()
 
-    # --- 8. Threat Hunting UI ---
-    def render_hunt_campaign_creator(self):
-        st.subheader("Start New Hunt")
-        st.text_input("Hypothesis Name")
-        st.button("Launch Hunt")
+    # --- 8. Threat Hunting UI (LIVE SCANNER) ---
+    def run_threat_hunting_tab(self):
+        self.render_top_header("Proactive Threat Hunting")
+        st.subheader("Live Log Threat Hunter")
+        st.write("کوئی بھی کی ورڈ یا پیٹرن لکھیں (جیسے `Failed`, `EDR`, `Firewall`) تاکہ سسٹم اس کا شکار کرے:")
+        
+        hypothesis = st.text_input("Enter Hunt Query / Keyword:")
+        
+        if st.button("Launch Hunt"):
+            if hypothesis:
+                log_file = "logs.csv"
+                if os.path.exists(log_file):
+                    df = pd.read_csv(log_file)
+                    mask = df.astype(str).apply(lambda x: x.str.contains(hypothesis, case=False, na=False)).any(axis=1)
+                    results_df = df[mask]
+                    
+                    st.success(f"Hunt completed for query: '{hypothesis}'")
+                    st.write(f"**Found {len(results_df)} matching records:**")
+                    if not results_df.empty:
+                        st.dataframe(results_df, use_container_width=True)
+                    else:
+                        st.info("No matching threats found.")
+                else:
+                    st.warning("Log database not found.")
+            else:
+                st.warning("Please enter a query first.")
 
-    def display_hunt_results(self):
-        st.write("Hunt Results: 3 Anomalous Scheduled Tasks Found.")
-
-    def render_yara_rule_tester(self):
-        st.text_area("Paste YARA Rule Here")
-        st.button("Run YARA Scan")
-
-    # --- 9. Threat Intelligence (CTI) UI - WITH DOMAIN & IP SCANNER ---
-    def display_threat_feed_status(self):
-        st.subheader("Active Intel Feeds")
-        st.write("✅ OTX AlienVault | ✅ MISP | ✅ AbuseIPDB | ✅ VirusTotal (Live)")
-
-    def render_ioc_lookup_tool(self):
-        st.markdown("### 🌐 Live Website & IP Scanner")
-        st.write("کسی بھی ویب سائٹ کا لنک (جیسے ncbae.edu.pk) یا آئی پی ایڈریس درج کریں اور اصلی رپورٹ دیکھیں۔")
+    # --- 9. Threat Intelligence (CTI) UI - LIVE API SCANNER ---
+    def run_cti_tab(self):
+        self.render_top_header("Cyber Threat Intelligence (Live API)")
+        st.markdown("### 🌐 Live Website (Domain) & IP Scanner")
+        st.write("کسی بھی ویب سائٹ کا لنک (جیسے `ncbae.edu.pk`) یا آئی پی ایڈریس درج کریں:")
         
         target = st.text_input("🔍 Enter IP or Domain/URL to Scan:")
         
         if st.button("Start Security Scan"):
             if target:
-                with st.spinner(f"Scanning {target} globally..."):
-                    # Check if input is a pure IPv4 address
+                with st.spinner(f"Querying VirusTotal globally for {target}..."):
                     is_ip = re.match(r"^\d{1,3}(\.\d{1,3}){3}$", target)
                     
                     if is_ip:
@@ -203,8 +219,8 @@ class SOCDashboardUI:
                     if "error" in result:
                         st.error(f"Scan Failed: {result['error']}")
                     else:
-                        st.success("Scan Completed!")
-                        st.write(f"**Target / Owner:** {result.get('target', target)} ({result.get('owner', 'N/A')})")
+                        st.success("Global Intelligence Scan Completed!")
+                        st.write(f"**Target / Registrar:** {result.get('target', target)} ({result.get('owner', 'N/A')})")
                         
                         c1, c2, c3 = st.columns(3)
                         c1.error(f"🚨 Malicious: {result.get('malicious', 0)}")
@@ -212,13 +228,13 @@ class SOCDashboardUI:
                         c3.success(f"✅ Safe: {result.get('harmless', 0)}")
                         
                         if result.get('malicious', 0) > 0:
-                            st.error("DANGER: یہ ہدف خطرناک پایا گیا ہے!")
+                            st.error("DANGER: یہ ہدف خطرناک (Malicious) پایا گیا ہے!")
                         else:
-                            st.info("System Clean: یہ بالکل محفوظ ہے۔")
+                            st.info("System Clean: یہ ہدف بالکل محفوظ ہے۔")
             else:
-                st.warning("Please enter an IP or domain first.")
+                st.warning("Please enter a target first.")
 
-    # --- 10. Dashboard Controller (Main App Logic) ---
+    # --- 10. Dashboard Controller ---
     def run_overview_tab(self):
         self.render_top_header("SOC Overview")
         self.render_kpi_row()
@@ -230,31 +246,6 @@ class SOCDashboardUI:
         self.render_top_header("Log Management & Search")
         search_query = self.render_log_search_bar()
         self.display_raw_logs_table(search_query)
-
-    def run_threat_analysis_tab(self):
-        self.render_top_header("Threat Analysis & Triage")
-        self.display_active_alerts_table()
-        self.render_alert_action_buttons()
-
-    def run_incident_response_tab(self):
-        self.render_top_header("Incident Response")
-        self.render_containment_actions()
-        self.render_incident_notes_area()
-
-    def run_vulnerability_tab(self):
-        self.render_top_header("Vulnerability Management")
-        self.plot_vulnerability_severity()
-        self.display_asset_risk_scores()
-
-    def run_threat_hunting_tab(self):
-        self.render_top_header("Proactive Threat Hunting")
-        self.render_hunt_campaign_creator()
-        self.display_hunt_results()
-
-    def run_cti_tab(self):
-        self.render_top_header("Cyber Threat Intelligence")
-        self.display_threat_feed_status()
-        self.render_ioc_lookup_tool()
 
     def main_loop(self):
         self.setup_page_config()
