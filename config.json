@@ -1,0 +1,73 @@
+{
+  "platform_settings": {
+    "app_name": "Enterprise SOC Platform",
+    "version": "1.0.0",
+    "environment": "production",
+    "debug_mode": false,
+    "timezone": "Asia/Karachi"
+  },
+  "log_management": {
+    "retention_days": 90,
+    "archive_format": "gzip",
+    "max_log_size_mb": 500,
+    "storage_path": "/var/logs/soc_platform/",
+    "enable_live_streaming": true
+  },
+  "siem_integration": {
+    "splunk": {
+      "enabled": true,
+      "hec_url": "https://splunk-heavy-forwarder.local:8088/services/collector",
+      "hec_token": "YOUR-SPLUNK-HEC-TOKEN-HERE"
+    },
+    "azure_sentinel": {
+      "enabled": false,
+      "workspace_id": "YOUR-WORKSPACE-ID",
+      "shared_key": "YOUR-SHARED-KEY"
+    },
+    "elastic_search": {
+      "enabled": true,
+      "host": "https://elasticsearch.local:9200",
+      "api_key": "YOUR-ELASTIC-API-KEY"
+    }
+  },
+  "threat_intelligence": {
+    "virustotal_api_key": "YOUR-VT-API-KEY",
+    "alienvault_otx_key": "YOUR-OTX-API-KEY",
+    "abuseipdb_key": "YOUR-ABUSEIPDB-KEY",
+    "misp_url": "https://misp.internal.local",
+    "misp_api_key": "YOUR-MISP-KEY",
+    "auto_update_feeds_hours": 12
+  },
+  "incident_response": {
+    "jira_integration": {
+      "enabled": true,
+      "url": "https://jira.yourcompany.com",
+      "project_key": "SEC",
+      "api_token": "YOUR-JIRA-TOKEN"
+    },
+    "slack_notifications": {
+      "enabled": true,
+      "webhook_url": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
+      "alert_channel": "#soc-alerts"
+    },
+    "default_mttd_sla_mins": 15,
+    "default_mttr_sla_hours": 4
+  },
+  "soar_automation": {
+    "auto_isolate_critical_assets": false,
+    "auto_block_malicious_ips": true,
+    "require_analyst_approval_for_containment": true,
+    "max_retries_on_failure": 3
+  },
+  "vulnerability_management": {
+    "cvss_critical_threshold": 9.0,
+    "cvss_high_threshold": 7.0,
+    "default_patch_sla_days_critical": 7,
+    "default_patch_sla_days_high": 30
+  },
+  "digital_forensics": {
+    "evidence_vault_path": "/mnt/secure_vault/evidence/",
+    "hash_algorithm_default": "sha256",
+    "auto_generate_coc_report": true
+  }
+}
