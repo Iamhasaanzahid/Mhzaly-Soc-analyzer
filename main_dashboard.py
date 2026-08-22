@@ -6,7 +6,7 @@ from threat_intel import ThreatIntelProcessor
 class RealWorldSOCPlatform:
     def __init__(self):
         self.app_name = "MHZALY Real-World SOC & Bug Bounty Platform"
-        self.version = "6.0 Live Pro"
+        self.version = "6.1 Live Pro"
         self.processor = ThreatIntelProcessor()
 
     def setup_page(self):
@@ -24,7 +24,7 @@ class RealWorldSOCPlatform:
 
         if choice == "Live Bug Bounty & Vulnerability Scanner":
             st.title("🔍 Real-World Bug Bounty & Infrastructure Analyzer")
-            st.markdown("یہ ٹूल دنیا کے سب سے بڑے سکیورٹی ڈیٹا بیس (VirusTotal Global Feed) سے جڑا ہے۔ کسی بھی کمپنی یا ویب سائٹ کا ڈومین لکھیں اور اس کے لائیو خطرات چیک کریں:")
+            st.markdown("کسی بھی ویب سائٹ یا ڈومین کا نام درج کریں تاکہ گلوبل سکیورٹی وینڈرز کی تفصیلی رپورٹس (Harmless, Malicious, Undetected) لائیو دیکھی جا سکیں:")
             
             target = st.text_input("Enter Target Domain (e.g., google.com, ncbae.edu.pk):")
             
@@ -42,27 +42,49 @@ class RealWorldSOCPlatform:
                             st.subheader(f"📊 Global Security Posture: {target}")
                             
                             c1, c2, c3, c4 = st.columns(4)
-                            c1.error(f"🚨 Malicious Flags: {stats.get('malicious', 0)}")
+                            c1.error(f"🚨 Malicious: {stats.get('malicious', 0)}")
                             c2.warning(f"⚠️ Suspicious: {stats.get('suspicious', 0)}")
-                            c3.success(f"✅ Clean / Harmless: {stats.get('harmless', 0)}")
+                            c3.success(f"✅ Harmless (Safe): {stats.get('harmless', 0)}")
                             c4.info(f"🛡️ Undetected: {stats.get('undetected', 0)}")
                             
-                            # Vendor Breakdown (Real Bug Bounty Report)
+                            # Fetching all vendor results to show what's clean, malicious, or undetected
                             vendors = result.get('last_analysis_results', {})
-                            malicious_vendors = {k: v['result'] for k, v in vendors.items() if v.get('category') == 'malicious'}
                             
-                            if malicious_vendors:
-                                st.subheader("🚨 Security Vendors Reporting Vulnerabilities / Threats:")
-                                st.table(pd.DataFrame(list(malicious_vendors.items()), columns=["Security Vendor", "Detection Details"]))
-                                st.error("⚠️ یہ لائیو رپورٹ آپ بطور سکیورٹی آڈٹ متعلقہ کمپنی کو پیش کر سکتے ہیں!")
-                            else:
-                                st.info("✨ Infrastructure Clean: گلوبل سکیورٹی نیٹ ورک کے مطابق یہ ہدف بالکل محفوظ ہے۔")
+                            if vendors:
+                                # Categorize vendor results
+                                vendor_list = []
+                                for vendor_name, details in vendors.items():
+                                    vendor_list.append({
+                                        "Security Vendor": vendor_name,
+                                        "Category": details.get('category'),
+                                        "Result / Verdict": details.get('result')
+                                    })
+                                
+                                df_vendors = pd.DataFrame(vendor_list)
+                                
+                                st.markdown("---")
+                                st.subheader("📋 Complete Breakdown of All Security Vendors")
+                                st.write("یہاں آپ دیکھ سکتے ہیں کہ کس وینڈر نے اس ہدف کو کیا نتیجہ دیا ہے:")
+                                
+                                # Filter options for user to inspect easily
+                                filter_option = st.selectbox("Filter by Verdict:", ["All", "malicious", "harmless", "undetected", "suspicious"])
+                                
+                                if filter_option != "All":
+                                    filtered_df = df_vendors[df_vendors['Category'] == filter_option]
+                                    st.dataframe(filtered_df, use_container_width=True)
+                                else:
+                                    st.dataframe(df_vendors, use_container_width=True)
+                                    
+                                malicious_count = stats.get('malicious', 0)
+                                if malicious_count > 0:
+                                    st.error("⚠️ خطرہ موجود ہے! اوپر دیے گئے مَلِیشیس وینڈرز کی لسٹ چیک کریں۔")
+                                else:
+                                    st.info("✨ یہ ہدف بالکل محفوظ (Clean) ہے اور تمام معروف سکیورٹی ایجنسیوں نے اسے ہارم لیس قرار دیا ہے۔")
                 else:
                     st.warning("Please enter a valid domain name.")
 
         elif choice == "Global Threat Intelligence (IP/Domain)":
             st.title("🌐 Live IP & Threat Intelligence Lookup")
-            st.markdown("مشکوک آئی پی ایڈریس کی جانچ پڑتال کریں:")
             ip_target = st.text_input("Enter IP Address (e.g., 8.8.8.8):")
             if st.button("Query IP Intelligence"):
                 if ip_target:
@@ -75,7 +97,6 @@ class RealWorldSOCPlatform:
 
         elif choice == "Live Incident Mitigation & SOAR":
             st.title("⚡ Live Incident Response & Firewall Actions")
-            st.markdown("کسی بھی خطرناک ہدف کو بلاک کرنے کے لیے لائیو ایکشن ٹرگر کریں:")
             bad_target = st.text_input("Enter Malicious IP or Domain to Block:")
             if st.button("🛑 Block on Perimeter Firewall & EDR"):
                 if bad_target:
