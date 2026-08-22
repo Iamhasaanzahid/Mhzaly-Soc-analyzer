@@ -18,53 +18,22 @@ class ThreatIntelProcessor:
         self.osint_cache = {}
         self.vt_api_key = os.getenv("VT_API_KEY") # Hidden API Key
 
-    # --- REAL API FEATURE: VirusTotal IP Check with Vendor Details ---
-    def check_ip_virustotal(self, ip_address):
+    # --- REAL WORLD API SCANNER (Bug Bounty & SOC Feature) ---
+    def scan_target(self, target):
         if not self.vt_api_key or self.vt_api_key == "apni_virustotal_api_key_yahan_paste_karein":
-            return {"error": "API Key missing! Please add VT_API_KEY in .env file."}
-        
-        url = f"https://www.virustotal.com/api/v3/ip_addresses/{ip_address}"
-        headers = {
-            "accept": "application/json",
-            "x-apikey": self.vt_api_key
-        }
-        
-        try:
-            response = requests.get(url, headers=headers)
-            if response.status_code == 200:
-                data = response.json()
-                attributes = data['data']['attributes']
-                stats = attributes['last_analysis_stats']
-                results = attributes.get('last_analysis_results', {})
-                
-                # Extracting which security vendors flagged it as malicious
-                malicious_vendors = {k: v['result'] for k, v in results.items() if v.get('category') == 'malicious'}
-                
-                return {
-                    "target": ip_address,
-                    "malicious": stats.get('malicious', 0),
-                    "suspicious": stats.get('suspicious', 0),
-                    "harmless": stats.get('harmless', 0),
-                    "undetected": stats.get('undetected', 0),
-                    "owner": attributes.get('as_owner', 'Unknown'),
-                    "malicious_vendors": malicious_vendors
-                }
-            elif response.status_code == 401:
-                return {"error": "Invalid API Key. Please check your .env file."}
-            else:
-                return {"error": f"Error {response.status_code}: IP not found or invalid."}
-        except Exception as e:
-            return {"error": str(e)}
-
-    # --- REAL API FEATURE: VirusTotal Domain/URL Check with Vendor Details ---
-    def check_domain_virustotal(self, domain):
-        if not self.vt_api_key or self.vt_api_key == "apni_virustotal_api_key_yahan_paste_karein":
-            return {"error": "API Key missing! Please add VT_API_KEY in .env file."}
+            return {"error": "API Key missing or invalid in .env file!"}
         
         # Clean domain/URL (Removes http://, https://, and trailing slashes)
-        domain = domain.replace("https://", "").replace("http://", "").strip("/").split("/")[0]
+        target = target.replace("https://", "").replace("http://", "").strip("/").split("/")[0]
         
-        url = f"https://www.virustotal.com/api/v3/domains/{domain}"
+        # Automatically detect if input is an IP address or a Domain name
+        is_ip = re.match(r"^\d{1,3}(\.\d{1,3}){3}$", target)
+        
+        if is_ip:
+            url = f"https://www.virustotal.com/api/v3/ip_addresses/{target}"
+        else:
+            url = f"https://www.virustotal.com/api/v3/domains/{target}"
+            
         headers = {
             "accept": "application/json",
             "x-apikey": self.vt_api_key
@@ -74,26 +43,11 @@ class ThreatIntelProcessor:
             response = requests.get(url, headers=headers)
             if response.status_code == 200:
                 data = response.json()
-                attributes = data['data']['attributes']
-                stats = attributes['last_analysis_stats']
-                results = attributes.get('last_analysis_results', {})
-                
-                # Extracting which security vendors flagged it as malicious
-                malicious_vendors = {k: v['result'] for k, v in results.items() if v.get('category') == 'malicious'}
-                
-                return {
-                    "target": domain,
-                    "malicious": stats.get('malicious', 0),
-                    "suspicious": stats.get('suspicious', 0),
-                    "harmless": stats.get('harmless', 0),
-                    "undetected": stats.get('undetected', 0),
-                    "owner": attributes.get('registrar', 'Unknown'),
-                    "malicious_vendors": malicious_vendors
-                }
+                return data.get('data', {}).get('attributes', {})
             elif response.status_code == 401:
                 return {"error": "Invalid API Key. Please check your .env file."}
             else:
-                return {"error": f"Error {response.status_code}: Domain not found or invalid."}
+                return {"error": f"Error {response.status_code}: Target not found or invalid."}
         except Exception as e:
             return {"error": str(e)}
 
