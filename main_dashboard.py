@@ -1,4 +1,4 @@
-# main_dashboard.py - MHZALY Enterprise SOC & Threat Hunting Platform (Updated with Custom UI/UX)
+# main_dashboard.py - MHZALY Enterprise SOC & Threat Hunting Platform (Updated with FORCED Custom UI/UX)
 
 import streamlit as st
 import pandas as pd
@@ -75,73 +75,83 @@ class SOCDashboardUI:
         st.set_page_config(page_title=self.app_name, layout="wide", page_icon="🛡️")
         
         # ==========================================
-        # CUSTOM CSS INJECTION FOR CYBER/DARK THEME
+        # FORCED CUSTOM CSS (Overrides default Streamlit theme)
         # ==========================================
         st.markdown("""
         <style>
-        /* Main background color */
-        .stApp {
-            background-color: #0d1117;
-            color: #c9d1d9;
-            font-family: 'Courier New', Courier, monospace;
+        /* Force Dark Background and Text for the whole app */
+        .stApp, [data-testid="stAppViewContainer"] {
+            background-color: #0d1117 !important;
+            color: #c9d1d9 !important;
+            font-family: 'Courier New', Courier, monospace !important;
         }
         
-        /* Sidebar styling */
+        /* Force Sidebar styling */
         [data-testid="stSidebar"] {
-            background-color: #161b22;
-            border-right: 2px solid #00ff00;
+            background-color: #161b22 !important;
+            border-right: 2px solid #00ff00 !important;
+        }
+        
+        /* Sidebar Text Color */
+        [data-testid="stSidebar"] div, [data-testid="stSidebar"] p, [data-testid="stSidebar"] label {
+            color: #c9d1d9 !important;
+        }
+        
+        /* Ensure all text inputs and text areas are dark */
+        .stTextInput>div>div>input, .stTextArea>div>div>textarea {
+            background-color: #0d1117 !important;
+            color: #00ff00 !important;
+            border: 1px solid #30363d !important;
+        }
+        .stTextInput>div>div>input:focus, .stTextArea>div>div>textarea:focus {
+            border-color: #00ff00 !important;
+            box-shadow: 0 0 5px #00ff00 !important;
         }
         
         /* Button styling - Hacker Green */
         .stButton>button {
-            background-color: transparent;
-            color: #00ff00;
-            border: 1px solid #00ff00;
-            border-radius: 5px;
-            transition: all 0.3s ease;
+            background-color: transparent !important;
+            color: #00ff00 !important;
+            border: 1px solid #00ff00 !important;
+            border-radius: 5px !important;
         }
         .stButton>button:hover {
-            background-color: #00ff00;
-            color: #0d1117;
-            box-shadow: 0 0 10px #00ff00;
+            background-color: #00ff00 !important;
+            color: #0d1117 !important;
+            box-shadow: 0 0 10px #00ff00 !important;
         }
         
-        /* Input fields styling */
-        .stTextInput>div>div>input, .stTextArea>div>div>textarea {
-            background-color: #0d1117;
-            color: #00ff00;
-            border: 1px solid #30363d;
-        }
-        .stTextInput>div>div>input:focus, .stTextArea>div>div>textarea:focus {
-            border-color: #00ff00;
-            box-shadow: 0 0 5px #00ff00;
+        /* Make Headers colored */
+        h1, h2, h3, h4, h5, h6 {
+            color: #58a6ff !important;
         }
         
         /* Metrics styling */
         [data-testid="stMetricValue"] {
-            color: #00ff00;
-            font-weight: bold;
+            color: #00ff00 !important;
+            font-weight: bold !important;
         }
         [data-testid="stMetricLabel"] {
-            color: #8b949e;
+            color: #8b949e !important;
         }
         
-        /* Headers & Text */
-        h1, h2, h3 {
-            color: #58a6ff !important;
+        /* General text styling to prevent black text */
+        p, span, div, li {
+            color: #c9d1d9 ;
         }
         
         /* Success/Warning/Error boxes */
         .stAlert {
-            background-color: #161b22;
-            border-left: 5px solid;
+            background-color: #161b22 !important;
+            border-left: 5px solid #00ff00 !important;
+            color: #c9d1d9 !important;
         }
         </style>
         """, unsafe_allow_html=True)
 
     def render_sidebar(self):
-        st.sidebar.markdown(f"<h2 style='color:#00ff00; text-align:center;'>🛡️ SOC Command Center</h2>", unsafe_allow_html=True)
-        st.sidebar.markdown(f"<p style='text-align:center; color:#8b949e;'>Version: {self.version}</p>", unsafe_allow_html=True)
+        st.sidebar.markdown(f"<h2 style='color:#00ff00 !important; text-align:center;'>🛡️ SOC Command Center</h2>", unsafe_allow_html=True)
+        st.sidebar.markdown(f"<p style='text-align:center; color:#8b949e !important;'>Version: {self.version}</p>", unsafe_allow_html=True)
         st.sidebar.markdown("---")
         return st.sidebar.radio("Navigation Menu", [
             "Overview & Dashboard",
@@ -162,7 +172,6 @@ class SOCDashboardUI:
         st.markdown("---")
         st.info("🟢 SYSTEM ONLINE | SECURITY PROTOCOLS ACTIVE | MODULES LOADED")
         
-        # Upgraded layout with columns and cards style
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric("Active Modules", "10 Core Engines", "Fully Integrated")
@@ -175,7 +184,6 @@ class SOCDashboardUI:
 
         st.markdown("---")
         st.markdown("### 📡 System Event Log")
-        # Dummy data for visual effect on dashboard
         log_data = pd.DataFrame(
             [
                 ["2026-08-24 03:15:00", "Firewall", "Blocked IP 192.168.1.55 (Malicious Signature)"],
@@ -186,7 +194,6 @@ class SOCDashboardUI:
         )
         st.dataframe(log_data, use_container_width=True, hide_index=True)
 
-    # --- 1. GLOBAL THREAT INTEL ---
     def run_threat_intel(self):
         st.title("🌐 Global Threat Intelligence (VirusTotal API)")
         st.markdown("Scan IP/Domain against global threat feeds:")
@@ -213,7 +220,6 @@ class SOCDashboardUI:
                             st.subheader("🚨 Flagged by Security Vendors:")
                             st.table(pd.DataFrame(list(malicious_vendors.items()), columns=["Vendor", "Finding"]))
 
-    # --- 2. DEEP BUG BOUNTY SCANNER ---
     def run_bug_bounty_scanner(self):
         st.title("🔍 Deep Bug Bounty & Security Header Analyzer")
         st.markdown("Analyze infrastructure and missing protections:")
@@ -242,7 +248,6 @@ class SOCDashboardUI:
             else:
                 st.warning("Input required.")
 
-    # --- 3. OSINT & GOOGLE DORK RECONNAISSANCE ---
     def run_osint_dorks(self):
         st.title("🌐 OSINT & Google Dorking Reconnaissance")
         st.markdown("Generate advanced Google Dorking payloads.")
@@ -282,9 +287,8 @@ class SOCDashboardUI:
                 st.code(final_query, language="text")
             with col2:
                 search_url = f"https://www.google.com/search?q={final_query}"
-                st.markdown(f"<a href='{search_url}' target='_blank'><button style='width:100%; padding:10px; background-color:#0d1117; color:#00ff00; border:1px solid #00ff00; border-radius:5px;'>Execute Search</button></a>", unsafe_allow_html=True)
+                st.markdown(f"<a href='{search_url}' target='_blank'><button style='width:100%; padding:10px; background-color:transparent !important; color:#00ff00 !important; border:1px solid #00ff00 !important; border-radius:5px !important;'>Execute Search</button></a>", unsafe_allow_html=True)
 
-    # --- 4. CRYPTO & PASSWORD ANALYZER ---
     def run_crypto_analyzer(self):
         st.title("🔐 Cryptographic Hash & Password Strength Analyzer")
 
@@ -320,7 +324,6 @@ class SOCDashboardUI:
             else:
                 st.error("🔴 STATUS: WEAK (Critical Risk)")
 
-    # --- 5. THREAT HUNTING ---
     def run_threat_hunting(self):
         st.title("🎯 Proactive Threat Hunting & IOC Analysis")
         
@@ -333,7 +336,6 @@ class SOCDashboardUI:
             else:
                 st.warning("Payload missing.")
 
-    # --- 6. DIGITAL FORENSICS ---
     def run_digital_forensics(self):
         st.title("🔎 Digital Forensics & Log Artifacts")
         
@@ -346,7 +348,6 @@ class SOCDashboardUI:
             else:
                 st.warning("Log data required.")
 
-    # --- 7. INCIDENT RESPONSE & SOAR ---
     def run_incident_response(self):
         st.title("⚡ Automated SOAR Playbooks")
         
@@ -362,7 +363,6 @@ class SOCDashboardUI:
             else:
                 st.warning("Target ID required.")
 
-    # --- 8. VULNERABILITY MANAGEMENT ---
     def run_vulnerability_management(self):
         st.title("📊 Vulnerability & CVSS Assessment")
         score = st.slider("CVSS Base Score Input", 0.0, 10.0, 7.5)
@@ -370,7 +370,6 @@ class SOCDashboardUI:
             res = self.vuln_mgr.calculate_cvss_score(score)
             st.json(res)
 
-    # --- 9. THREAT ANALYZER (SQLi / XSS) ---
     def run_threat_analyzer(self):
         st.title("🔬 Web Application Threat Analyzer")
         payload = st.text_input("Input Parameter String:")
@@ -383,7 +382,6 @@ class SOCDashboardUI:
             else:
                 st.warning("Parameter string required.")
 
-    # --- 10. LIVE INCIDENT DEFENSE & REPORTING ---
     def run_incident_defense(self):
         st.title("📝 Incident Defense & Evidence Ledger")
         
