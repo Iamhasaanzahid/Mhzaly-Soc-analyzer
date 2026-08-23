@@ -1,8 +1,10 @@
-# main_dashboard.py - MHZALY Enterprise SOC & Threat Hunting Platform (Updated with OSINT Dorks)
+# main_dashboard.py - MHZALY Enterprise SOC & Threat Hunting Platform (Updated with Crypto & OSINT Dorks)
 
 import streamlit as st
 import pandas as pd
 import os
+import hashlib
+import re
 from datetime import datetime
 
 # --- Safe Backend Modules Import (Fallback mechanism) ---
@@ -58,7 +60,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Hunting Platform"
-        self.version = "8.5 Pro Ultimate"
+        self.version = "9.0 Pro Ultimate"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -80,7 +82,8 @@ class SOCDashboardUI:
             "Overview & Dashboard",
             "Global Threat Intel (VirusTotal)", 
             "Deep Bug Bounty & Vulnerability Scanner", 
-            "OSINT & Google Dork Reconnaissance",  # <-- New OSINT Module Added Here
+            "OSINT & Google Dork Reconnaissance",  
+            "Crypto & Password Analyzer",  # <-- Newly Added Crypto Module
             "Threat Hunting & IOCs",
             "Digital Forensics & Logs",
             "Incident Response & SOAR",
@@ -92,10 +95,10 @@ class SOCDashboardUI:
     def run_overview(self):
         st.title("🛡️ MHZALY Enterprise Cyber Defense Platform")
         st.markdown("---")
-        st.success("خوش آمدید! یہ آپ کا مکمل اور رئیل ورلڈ SOC پلیٹ فارم ہے جہاں OSINT ڈارکس سمیت تمام سکیورٹی ماڈیولز اب فعال ہیں۔")
+        st.success("خوش آمدید! یہ آپ کا مکمل اور رئیل ورلڈ SOC پلیٹ فارم ہے جہاں کرپٹوگرافی اور OSINT ماڈیولز سمیت تمام سکیورٹی ٹولز فعال ہیں۔")
         
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Active Modules", "9 Core Engines", "Fully Integrated")
+        col1.metric("Active Modules", "10 Core Engines", "Fully Integrated")
         col2.metric("SOC Status", "Online", "Protected")
         col3.metric("Platform Version", self.version, "Stable")
         col4.metric("Analyst", "M. Hassaan Zahid", "Lead SOC")
@@ -157,7 +160,7 @@ class SOCDashboardUI:
             else:
                 st.warning("Please enter a domain name.")
 
-    # --- 3. OSINT & GOOGLE DORK RECONNAISSANCE (NEW MODULE) ---
+    # --- 3. OSINT & GOOGLE DORK RECONNAISSANCE ---
     def run_osint_dorks(self):
         st.title("🌐 OSINT & Google Dorking Reconnaissance")
         st.markdown("Leverage advanced search operators and Google Dorking payloads for threat intelligence, asset discovery, and vulnerability assessment.")
@@ -201,7 +204,51 @@ class SOCDashboardUI:
                 search_url = f"https://www.google.com/search?q={final_query}"
                 st.markdown(f"[🔍 Google Search]({search_url})", unsafe_allow_html=True)
 
-    # --- 4. THREAT HUNTING ---
+    # --- 4. CRYPTO & PASSWORD ANALYZER (NEW MODULE) ---
+    def run_crypto_analyzer(self):
+        st.title("🔐 Cryptographic Hash & Password Strength Analyzer")
+        st.markdown("Evaluate password complexity, check entropy standards, and generate instant cryptographic hashes (MD5, SHA-256) for forensic analysis.")
+
+        target_input = st.text_input("Enter Password or String to Analyze:", type="password", placeholder="Enter secret or password...")
+
+        if target_input:
+            st.markdown("---")
+            st.markdown("#### 🔍 Cryptographic Hashes")
+            
+            md5_hash = hashlib.md5(target_input.encode()).hexdigest()
+            sha256_hash = hashlib.sha256(target_input.encode()).hexdigest()
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.text_input("MD5 Hash", value=md5_hash, disabled=True)
+            with col2:
+                st.text_input("SHA-256 Hash", value=sha256_hash, disabled=True)
+
+            st.markdown("---")
+            st.markdown("#### 🛡️ Password Complexity & Strength Audit")
+
+            length_score = len(target_input) >= 8
+            upper_score = bool(re.search(r'[A-Z]', target_input))
+            lower_score = bool(re.search(r'[a-z]', target_input))
+            digit_score = bool(re.search(r'\d', target_input))
+            special_score = bool(re.search(r'[@$!%*?&]', target_input))
+
+            score = sum([length_score, upper_score, lower_score, digit_score, special_score])
+
+            if score == 5:
+                st.success("🟢 **Strength: EXTREMELY STRONG** - Meets all enterprise cryptographic complexity standards.")
+            elif score >= 3:
+                st.warning("🟡 **Strength: MODERATE** - Consider adding special characters and numbers for higher entropy.")
+            else:
+                st.error("🔴 **Strength: WEAK** - Vulnerable to Brute-Force and Dictionary attacks!")
+
+            st.write("- **Length (>= 8 chars):**", "✅" if length_score else "❌")
+            st.write("- **Uppercase Letter:**", "✅" if upper_score else "❌")
+            st.write("- **Lowercase Letter:**", "✅" if lower_score else "❌")
+            st.write("- **Numbers:**", "✅" if digit_score else "❌")
+            st.write("- **Special Characters (@$!%*?&):**", "✅" if special_score else "❌")
+
+    # --- 5. THREAT HUNTING ---
     def run_threat_hunting(self):
         st.title("🎯 Proactive Threat Hunting & IOC Analysis")
         st.markdown("پاورشیل سکرپٹس یا پے لوڈ میں چھپے ہوئے خطرات (Obfuscation) کی جانچ کریں:")
@@ -214,7 +261,7 @@ class SOCDashboardUI:
             else:
                 st.warning("Please enter a payload.")
 
-    # --- 5. DIGITAL FORENSICS ---
+    # --- 6. DIGITAL FORENSICS ---
     def run_digital_forensics(self):
         st.title("🔎 Digital Forensics & Log Artifacts")
         st.markdown("سسٹم کے لاگز یا ٹیکسٹ سے شواہد (IPs, Emails) خود بخود نکالیں:")
@@ -227,7 +274,7 @@ class SOCDashboardUI:
             else:
                 st.warning("Please provide log text.")
 
-    # --- 6. INCIDENT RESPONSE & SOAR ---
+    # --- 7. INCIDENT RESPONSE & SOAR ---
     def run_incident_response(self):
         st.title("⚡ Incident Response & Automated SOAR Playbooks")
         st.markdown("سکیورٹی انسیڈنٹس پر ٹکٹ بنائیں اور پلے بکس رن کریں:")
@@ -244,7 +291,7 @@ class SOCDashboardUI:
             else:
                 st.warning("Please enter target.")
 
-    # --- 7. VULNERABILITY MANAGEMENT ---
+    # --- 8. VULNERABILITY MANAGEMENT ---
     def run_vulnerability_management(self):
         st.title("📊 Vulnerability & CVSS Assessment")
         score = st.slider("CVSS Base Score", 0.0, 10.0, 7.5)
@@ -252,7 +299,7 @@ class SOCDashboardUI:
             res = self.vuln_mgr.calculate_cvss_score(score)
             st.json(res)
 
-    # --- 8. THREAT ANALYZER (SQLi / XSS) ---
+    # --- 9. THREAT ANALYZER (SQLi / XSS) ---
     def run_threat_analyzer(self):
         st.title("🔬 Threat & Attack Analyzer (SQLi / XSS)")
         payload = st.text_input("Enter query string or payload to inspect:")
@@ -265,7 +312,7 @@ class SOCDashboardUI:
             else:
                 st.warning("Please enter a payload.")
 
-    # --- 9. LIVE INCIDENT DEFENSE & REPORTING ---
+    # --- 10. LIVE INCIDENT DEFENSE & REPORTING ---
     def run_incident_defense(self):
         st.title("📝 Incident Defense & Evidence Ledger")
         st.markdown("مشکوک یا سکیمنگ ویب سائٹ کے خلاف ثبوت درج کریں اور آڈٹ فائل میں محفوظ کریں:")
@@ -298,7 +345,8 @@ class SOCDashboardUI:
         if choice == "Overview & Dashboard": self.run_overview()
         elif choice == "Global Threat Intel (VirusTotal)": self.run_threat_intel()
         elif choice == "Deep Bug Bounty & Vulnerability Scanner": self.run_bug_bounty_scanner()
-        elif choice == "OSINT & Google Dork Reconnaissance": self.run_osint_dorks() # <-- Router for new module
+        elif choice == "OSINT & Google Dork Reconnaissance": self.run_osint_dorks()
+        elif choice == "Crypto & Password Analyzer": self.run_crypto_analyzer() # <-- Router for Crypto Module
         elif choice == "Threat Hunting & IOCs": self.run_threat_hunting()
         elif choice == "Digital Forensics & Logs": self.run_digital_forensics()
         elif choice == "Incident Response & SOAR": self.run_incident_response()
