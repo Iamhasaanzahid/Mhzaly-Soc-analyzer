@@ -1,3 +1,5 @@
+# main_dashboard.py - MHZALY Enterprise SOC & Threat Hunting Platform (Updated with OSINT Dorks)
+
 import streamlit as st
 import pandas as pd
 import os
@@ -56,7 +58,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Hunting Platform"
-        self.version = "8.0 Pro Ultimate"
+        self.version = "8.5 Pro Ultimate"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -78,6 +80,7 @@ class SOCDashboardUI:
             "Overview & Dashboard",
             "Global Threat Intel (VirusTotal)", 
             "Deep Bug Bounty & Vulnerability Scanner", 
+            "OSINT & Google Dork Reconnaissance",  # <-- New OSINT Module Added Here
             "Threat Hunting & IOCs",
             "Digital Forensics & Logs",
             "Incident Response & SOAR",
@@ -89,10 +92,10 @@ class SOCDashboardUI:
     def run_overview(self):
         st.title("🛡️ MHZALY Enterprise Cyber Defense Platform")
         st.markdown("---")
-        st.success("خوش آمدید! یہ آپ کا مکمل اور رئیل ورلڈ SOC پلیٹ فارم ہے جہاں تمام بیک اینڈ سکیورٹی ماڈیولز اب فعال طریقے سے کام کر رہے ہیں۔")
+        st.success("خوش آمدید! یہ آپ کا مکمل اور رئیل ورلڈ SOC پلیٹ فارم ہے جہاں OSINT ڈارکس سمیت تمام سکیورٹی ماڈیولز اب فعال ہیں۔")
         
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Active Modules", "8 Core Engines", "Fully Integrated")
+        col1.metric("Active Modules", "9 Core Engines", "Fully Integrated")
         col2.metric("SOC Status", "Online", "Protected")
         col3.metric("Platform Version", self.version, "Stable")
         col4.metric("Analyst", "M. Hassaan Zahid", "Lead SOC")
@@ -154,7 +157,51 @@ class SOCDashboardUI:
             else:
                 st.warning("Please enter a domain name.")
 
-    # --- 3. THREAT HUNTING ---
+    # --- 3. OSINT & GOOGLE DORK RECONNAISSANCE (NEW MODULE) ---
+    def run_osint_dorks(self):
+        st.title("🌐 OSINT & Google Dorking Reconnaissance")
+        st.markdown("Leverage advanced search operators and Google Dorking payloads for threat intelligence, asset discovery, and vulnerability assessment.")
+
+        dork_categories = {
+            "01. Sensitive Files & Credentials": [
+                ("Database Dumps & Backups", 'site:target.com filetype:sql OR filetype:bak OR filetype:dump'),
+                ("Private Keys & Configs", 'site:target.com ext:pem OR ext:key OR ext:env OR inurl:config'),
+                ("Log Files with Passwords", 'site:target.com intext:"password" filetype:log')
+            ],
+            "02. Cloud Infrastructure & DevOps": [
+                ("Public S3 Buckets", 'site:s3.amazonaws.com "target.com"'),
+                ("CI/CD Pipelines (Jenkins/GitLab)", 'site:target.com inurl:jenkins OR inurl:gitlab-ci'),
+                ("Container Dashboards", 'site:target.com inurl:kubernetes OR inurl:grafana')
+            ],
+            "03. Modern SaaS & API Endpoints": [
+                ("Swagger / API Docs", 'site:target.com inurl:swagger OR inurl:api-docs'),
+                ("Admin Portals & SSO", 'site:target.com inurl:admin OR inurl:auth/login'),
+                ("GraphQL Endpoints", 'site:target.com inurl:graphql')
+            ],
+            "04. AI & Machine Learning Infrastructure": [
+                ("Exposed OpenAI/API Keys in Notebooks", 'site:target.com filetype:ipynb "OPENAI_API_KEY"'),
+                ("Vector Databases & MLFlow", 'site:target.com inurl:mlflow OR inurl:chroma')
+            ]
+        }
+
+        selected_category = st.selectbox("Select Reconnaissance Category", list(dork_categories.keys()))
+        
+        st.markdown(f"#### 🔎 Payloads for: {selected_category}")
+        target_domain = st.text_input("Enter Target Domain (e.g., target.com):", "example.com")
+
+        st.markdown("---")
+        st.markdown("### Generated Dork Queries (Click to Copy & Search):")
+
+        for name, query_template in dork_categories[selected_category]:
+            final_query = query_template.replace("target.com", target_domain)
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.code(final_query, language="text")
+            with col2:
+                search_url = f"https://www.google.com/search?q={final_query}"
+                st.markdown(f"[🔍 Google Search]({search_url})", unsafe_allow_html=True)
+
+    # --- 4. THREAT HUNTING ---
     def run_threat_hunting(self):
         st.title("🎯 Proactive Threat Hunting & IOC Analysis")
         st.markdown("پاورشیل سکرپٹس یا پے لوڈ میں چھپے ہوئے خطرات (Obfuscation) کی جانچ کریں:")
@@ -167,7 +214,7 @@ class SOCDashboardUI:
             else:
                 st.warning("Please enter a payload.")
 
-    # --- 4. DIGITAL FORENSICS ---
+    # --- 5. DIGITAL FORENSICS ---
     def run_digital_forensics(self):
         st.title("🔎 Digital Forensics & Log Artifacts")
         st.markdown("سسٹم کے لاگز یا ٹیکسٹ سے شواہد (IPs, Emails) خود بخود نکالیں:")
@@ -180,7 +227,7 @@ class SOCDashboardUI:
             else:
                 st.warning("Please provide log text.")
 
-    # --- 5. INCIDENT RESPONSE & SOAR ---
+    # --- 6. INCIDENT RESPONSE & SOAR ---
     def run_incident_response(self):
         st.title("⚡ Incident Response & Automated SOAR Playbooks")
         st.markdown("سکیورٹی انسیڈنٹس پر ٹکٹ بنائیں اور پلے بکس رن کریں:")
@@ -197,7 +244,7 @@ class SOCDashboardUI:
             else:
                 st.warning("Please enter target.")
 
-    # --- 6. VULNERABILITY MANAGEMENT ---
+    # --- 7. VULNERABILITY MANAGEMENT ---
     def run_vulnerability_management(self):
         st.title("📊 Vulnerability & CVSS Assessment")
         score = st.slider("CVSS Base Score", 0.0, 10.0, 7.5)
@@ -205,7 +252,7 @@ class SOCDashboardUI:
             res = self.vuln_mgr.calculate_cvss_score(score)
             st.json(res)
 
-    # --- 7. THREAT ANALYZER (SQLi / XSS) ---
+    # --- 8. THREAT ANALYZER (SQLi / XSS) ---
     def run_threat_analyzer(self):
         st.title("🔬 Threat & Attack Analyzer (SQLi / XSS)")
         payload = st.text_input("Enter query string or payload to inspect:")
@@ -218,7 +265,7 @@ class SOCDashboardUI:
             else:
                 st.warning("Please enter a payload.")
 
-    # --- 8. LIVE INCIDENT DEFENSE & REPORTING ---
+    # --- 9. LIVE INCIDENT DEFENSE & REPORTING ---
     def run_incident_defense(self):
         st.title("📝 Incident Defense & Evidence Ledger")
         st.markdown("مشکوک یا سکیمنگ ویب سائٹ کے خلاف ثبوت درج کریں اور آڈٹ فائل میں محفوظ کریں:")
@@ -251,6 +298,7 @@ class SOCDashboardUI:
         if choice == "Overview & Dashboard": self.run_overview()
         elif choice == "Global Threat Intel (VirusTotal)": self.run_threat_intel()
         elif choice == "Deep Bug Bounty & Vulnerability Scanner": self.run_bug_bounty_scanner()
+        elif choice == "OSINT & Google Dork Reconnaissance": self.run_osint_dorks() # <-- Router for new module
         elif choice == "Threat Hunting & IOCs": self.run_threat_hunting()
         elif choice == "Digital Forensics & Logs": self.run_digital_forensics()
         elif choice == "Incident Response & SOAR": self.run_incident_response()
