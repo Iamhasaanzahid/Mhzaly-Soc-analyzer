@@ -12,6 +12,43 @@ This repository contains a comprehensive, modular Security Operations Center (SO
 
 ---
 
+## 🏗️ System Architecture & Data Flow
+
+================================================================================
+                    MHZALY-SOC ARCHITECTURE & DATA FLOW
+================================================================================
+
+      +------------------------------------------------------------+
+      │                  Enterprise Data Sources                   │
+      │   (Windows Logs, Sysmon, CloudTrail, Network Traffic)      │
+      +------------------------------------------------------------+
+                                    │
+                                    ▼
+      +------------------------------------------------------------+
+      │                Core Security Engine (Python)               │
+      │  ┌────────────────────────┐    ┌────────────────────────┐  │
+      │  │   threat_intel.py      │    │    analyzer.py         │  │
+      │  │ (VirusTotal / Scanners)│    │   (SQLi, XSS, Risk)    │  │
+      │  └────────────────────────┘    └────────────────────────┘  │
+      │  ┌────────────────────────┐    ┌────────────────────────┐  │
+      │  │   threat_hunting.py    │    │digital_forensics.py    │  │
+      │  │ (IOC Sweeping & YARA)  │    │ (Artifacts & Parsing)  │  │
+      │  └────────────────────────┘    └────────────────────────┘  │
+      │  ┌────────────────────────┐    ┌────────────────────────┐  │
+      │  │  incident_response.py  │    │  soar_automation.py    │  │
+      │  │ (Tickets & Severity)   │    │ (Automated Playbooks)  │  │
+      │  └────────────────────────┘    └────────────────────────┘  │
+      +------------------------------------------------------------+
+                                    │
+                                    ▼
+      +------------------------------------------------------------+
+      │               Streamlit Command Center UI                  │
+      │                     (main_dashboard.py)                    │
+      │      [ Interactive SOC Dashboards, Metrics & Reports ]     │
+      +------------------------------------------------------------+
+
+---
+
 ## 🛠️ Core Capabilities & Architecture
 
 * Centralized Log Management & SIEM: Automated ingestion, parsing, and indexing of enterprise logs (Windows security logs, Sysmon, Linux auth, and CloudTrail).
@@ -46,10 +83,10 @@ Mhzaly-Soc-analyzer/
 
 To run the interactive SOC dashboard on your local machine, execute these terminal commands in order:
 
-1. Clone the repository: git clone https://github.com/lamhasaanzahid/Mhzaly-Soc-analyzer.git
-2. Navigate to folder: cd Mhzaly-Soc-analyzer
-3. Install dependencies: pip install -r requirements.txt
-4. Run dashboard: streamlit run main_dashboard.py
+git clone https://github.com/lamhasaanzahid/Mhzaly-Soc-analyzer.git
+cd Mhzaly-Soc-analyzer
+pip install -r requirements.txt
+streamlit run main_dashboard.py
 
 ---
 
@@ -63,4 +100,5 @@ To run the interactive SOC dashboard on your local machine, execute these termin
 ---
 
 ## 📄 License & Academic Note
+
 Developed as an advanced enterprise security automation project under Information Systems Technology Management standards. Feel free to reference or contribute!
