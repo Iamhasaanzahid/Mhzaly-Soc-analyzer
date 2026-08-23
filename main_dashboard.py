@@ -1,4 +1,4 @@
-# main_dashboard.py - MHZALY Enterprise SOC & Threat Hunting Platform (Updated with FORCED Custom UI/UX)
+# main_dashboard.py - MHZALY Enterprise SOC & Threat Hunting Platform (Updated with Detailed CVSS & UI/UX)
 
 import streamlit as st
 import pandas as pd
@@ -183,16 +183,20 @@ class SOCDashboardUI:
             st.metric("Lead Analyst", "M. Hassaan Zahid", "Access: ROOT")
 
         st.markdown("---")
-        st.markdown("### 📡 System Event Log")
-        log_data = pd.DataFrame(
-            [
-                ["2026-08-24 03:15:00", "Firewall", "Blocked IP 192.168.1.55 (Malicious Signature)"],
-                ["2026-08-24 03:20:12", "SIEM", "Multiple failed login attempts on Admin Portal"],
-                ["2026-08-24 03:25:40", "Threat Intel", "Updated global IOC feeds successfully"]
-            ],
-            columns=["Timestamp", "Source", "Event Details"]
-        )
-        st.dataframe(log_data, use_container_width=True, hide_index=True)
+        st.markdown("### 📡 Live Incident Event Log (Real-Time Database)")
+        
+        # Connect to real incident database (incident_reports.csv)
+        file_name = "incident_reports.csv"
+        if os.path.exists(file_name):
+            try:
+                real_log_data = pd.read_csv(file_name)
+                if "Timestamp" in real_log_data.columns:
+                    real_log_data = real_log_data.sort_values(by="Timestamp", ascending=False)
+                st.dataframe(real_log_data, use_container_width=True, hide_index=True)
+            except Exception as e:
+                st.error("Error reading live database records.")
+        else:
+            st.warning("⚠️ No active security incidents logged yet. Use 'Live Incident Defense & Reporting' to record threats.")
 
     def run_threat_intel(self):
         st.title("🌐 Global Threat Intelligence (VirusTotal API)")
@@ -365,10 +369,55 @@ class SOCDashboardUI:
 
     def run_vulnerability_management(self):
         st.title("📊 Vulnerability & CVSS Assessment")
-        score = st.slider("CVSS Base Score Input", 0.0, 10.0, 7.5)
+        st.markdown("Evaluate the severity of a vulnerability based on the Common Vulnerability Scoring System (CVSS v3.1).")
+        
+        score = st.slider("Select CVSS Base Score:", 0.0, 10.0, 7.5, 0.1)
+        
         if st.button("Calculate Vector Risk"):
-            res = self.vuln_mgr.calculate_cvss_score(score)
-            st.json(res)
+            st.markdown("---")
+            st.subheader("🛡️ Vulnerability Analysis Report")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.metric(label="Calculated Base Score", value=f"{score}/10.0")
+            
+            with col2:
+                # Detail Logic added here based on official CVSS scales
+                if score == 0.0:
+                    severity = "None"
+                    color = "grey"
+                    recommendation = "No immediate action required. Monitor for baseline changes."
+                    st.info(f"**Severity Level:** {severity}")
+                elif 0.1 <= score <= 3.9:
+                    severity = "Low"
+                    color = "green"
+                    recommendation = "Add to routine patch management schedule. Low risk of exploitation."
+                    st.success(f"**Severity Level:** {severity} 🟢")
+                elif 4.0 <= score <= 6.9:
+                    severity = "Medium"
+                    color = "yellow"
+                    recommendation = "Schedule patching during next maintenance window. Apply compensating controls if possible."
+                    st.warning(f"**Severity Level:** {severity} 🟡")
+                elif 7.0 <= score <= 8.9:
+                    severity = "High"
+                    color = "orange"
+                    recommendation = "Prioritize patching immediately. Restrict access to affected components."
+                    st.error(f"**Severity Level:** {severity} 🟠")
+                elif 9.0 <= score <= 10.0:
+                    severity = "Critical"
+                    color = "red"
+                    recommendation = "URGENT ACTION REQUIRED. Isolate affected systems and apply emergency patches immediately."
+                    st.error(f"**Severity Level:** {severity} 🔴")
+                    
+            st.markdown("#### ⚙️ SOC Analyst Recommendation:")
+            st.markdown(f"> {recommendation}")
+            
+            # Fallback for the backend module in case it has its own logic
+            backend_res = self.vuln_mgr.calculate_cvss_score(score)
+            if "status" not in backend_res or backend_res["status"] != "Module missing":
+                 with st.expander("View Backend Engine Raw Output"):
+                     st.json(backend_res)
 
     def run_threat_analyzer(self):
         st.title("🔬 Web Application Threat Analyzer")
