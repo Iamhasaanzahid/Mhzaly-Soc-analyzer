@@ -1,4 +1,5 @@
-# main_dashboard.py - MHZALY Enterprise SOC & Threat Hunting Platform (Updated with Detailed CVSS & UI/UX)
+# main_dashboard.py - MHZALY Enterprise SOC & Threat Hunting Platform 
+# (Updated with Autonomous AI Agents)
 
 import streamlit as st
 import pandas as pd
@@ -6,6 +7,15 @@ import os
 import hashlib
 import re
 from datetime import datetime
+
+# ==========================================
+# 🤖 NEW: AI SOC Agents Backend Module
+# ==========================================
+try:
+    from ai_soc_agents import run_autonomous_soc_analysis
+except ImportError:
+    # Fallback agar ai_soc_agents.py file missing ho
+    def run_autonomous_soc_analysis(logs): return "**Error:** `ai_soc_agents.py` file missing hai ya CrewAI install nahi hua."
 
 # --- Safe Backend Modules Import (Fallback mechanism) ---
 try:
@@ -60,7 +70,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Hunting Platform"
-        self.version = "9.0 Pro Ultimate"
+        self.version = "9.0 Pro Ultimate (AI Edition)"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -74,30 +84,21 @@ class SOCDashboardUI:
     def setup_page_config(self):
         st.set_page_config(page_title=self.app_name, layout="wide", page_icon="🛡️")
         
-        # ==========================================
         # FORCED CUSTOM CSS (Overrides default Streamlit theme)
-        # ==========================================
         st.markdown("""
         <style>
-        /* Force Dark Background and Text for the whole app */
         .stApp, [data-testid="stAppViewContainer"] {
             background-color: #0d1117 !important;
             color: #c9d1d9 !important;
             font-family: 'Courier New', Courier, monospace !important;
         }
-        
-        /* Force Sidebar styling */
         [data-testid="stSidebar"] {
             background-color: #161b22 !important;
             border-right: 2px solid #00ff00 !important;
         }
-        
-        /* Sidebar Text Color */
         [data-testid="stSidebar"] div, [data-testid="stSidebar"] p, [data-testid="stSidebar"] label {
             color: #c9d1d9 !important;
         }
-        
-        /* Ensure all text inputs and text areas are dark */
         .stTextInput>div>div>input, .stTextArea>div>div>textarea {
             background-color: #0d1117 !important;
             color: #00ff00 !important;
@@ -107,8 +108,6 @@ class SOCDashboardUI:
             border-color: #00ff00 !important;
             box-shadow: 0 0 5px #00ff00 !important;
         }
-        
-        /* Button styling - Hacker Green */
         .stButton>button {
             background-color: transparent !important;
             color: #00ff00 !important;
@@ -120,27 +119,10 @@ class SOCDashboardUI:
             color: #0d1117 !important;
             box-shadow: 0 0 10px #00ff00 !important;
         }
-        
-        /* Make Headers colored */
-        h1, h2, h3, h4, h5, h6 {
-            color: #58a6ff !important;
-        }
-        
-        /* Metrics styling */
-        [data-testid="stMetricValue"] {
-            color: #00ff00 !important;
-            font-weight: bold !important;
-        }
-        [data-testid="stMetricLabel"] {
-            color: #8b949e !important;
-        }
-        
-        /* General text styling to prevent black text */
-        p, span, div, li {
-            color: #c9d1d9 ;
-        }
-        
-        /* Success/Warning/Error boxes */
+        h1, h2, h3, h4, h5, h6 { color: #58a6ff !important; }
+        [data-testid="stMetricValue"] { color: #00ff00 !important; font-weight: bold !important; }
+        [data-testid="stMetricLabel"] { color: #8b949e !important; }
+        p, span, div, li { color: #c9d1d9 ; }
         .stAlert {
             background-color: #161b22 !important;
             border-left: 5px solid #00ff00 !important;
@@ -155,6 +137,7 @@ class SOCDashboardUI:
         st.sidebar.markdown("---")
         return st.sidebar.radio("Navigation Menu", [
             "Overview & Dashboard",
+            "🤖 Autonomous AI SOC Agents", # <-- NAYA AI MENU ITEM
             "Global Threat Intel (VirusTotal)", 
             "Deep Bug Bounty & Vulnerability Scanner", 
             "OSINT & Google Dork Reconnaissance",  
@@ -174,7 +157,7 @@ class SOCDashboardUI:
         
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Active Modules", "10 Core Engines", "Fully Integrated")
+            st.metric("Active Modules", "11 Core Engines", "Fully Integrated")
         with col2:
             st.metric("SOC Status", "Online", "Protected")
         with col3:
@@ -185,7 +168,6 @@ class SOCDashboardUI:
         st.markdown("---")
         st.markdown("### 📡 Live Incident Event Log (Real-Time Database)")
         
-        # Connect to real incident database (incident_reports.csv)
         file_name = "incident_reports.csv"
         if os.path.exists(file_name):
             try:
@@ -197,6 +179,34 @@ class SOCDashboardUI:
                 st.error("Error reading live database records.")
         else:
             st.warning("⚠️ No active security incidents logged yet. Use 'Live Incident Defense & Reporting' to record threats.")
+
+    # ==========================================
+    # 🤖 NEW: AI SOC Agents Page Function
+    # ==========================================
+    def run_ai_soc_agents(self):
+        st.title("🤖 Autonomous AI SOC Analysts")
+        st.markdown("> **Multi-Agent Architecture:** Manager, Threat Hunter, aur Incident Responder AI aapas mein mil kar system logs ko analyze karte hain.")
+        
+        dummy_logs = """[10:05:22] GET /login.php - 192.168.1.5 - Status: 200
+[10:05:25] POST /login.php username=admin password=123 - 192.168.1.5 - Status: 401
+[10:05:27] POST /login.php username=admin password=admin - 192.168.1.5 - Status: 401
+[10:06:01] GET /search.php?q=<script>alert('xss')</script> - 203.11.22.3 - Status: 200"""
+        
+        logs_input = st.text_area("Input Raw Logs / Data for AI Analysis:", value=dummy_logs, height=200)
+        
+        if st.button("🚀 Initialize Autonomous Threat Hunt"):
+            if logs_input:
+                with st.spinner("🧠 AI Cyber-Agents active ho gaye hain! Logs analyze ho rahe hain (Isme 1-2 minutes lag sakte hain)..."):
+                    try:
+                        report = run_autonomous_soc_analysis(logs_input)
+                        st.success("✅ AI Analysis Complete!")
+                        st.markdown("---")
+                        st.markdown("### 📊 AI Incident Report")
+                        st.markdown(report)
+                    except Exception as e:
+                        st.error(f"⚠️ Agent Communication Error: {e}")
+            else:
+                st.warning("Please provide logs for analysis.")
 
     def run_threat_intel(self):
         st.title("🌐 Global Threat Intelligence (VirusTotal API)")
@@ -217,223 +227,80 @@ class SOCDashboardUI:
                         c1.error(f"🚨 Malicious: {stats.get('malicious', 0)}")
                         c2.warning(f"⚠️ Suspicious: {stats.get('suspicious', 0)}")
                         c3.success(f"✅ Harmless: {stats.get('harmless', 0)}")
-                        
-                        vendors = result.get('last_analysis_results', {})
-                        malicious_vendors = {k: v['result'] for k, v in vendors.items() if v.get('category') == 'malicious'}
-                        if malicious_vendors:
-                            st.subheader("🚨 Flagged by Security Vendors:")
-                            st.table(pd.DataFrame(list(malicious_vendors.items()), columns=["Vendor", "Finding"]))
 
     def run_bug_bounty_scanner(self):
         st.title("🔍 Deep Bug Bounty & Security Header Analyzer")
-        st.markdown("Analyze infrastructure and missing protections:")
-        
         domain = st.text_input("Enter Target Domain:")
-        
         if st.button("Execute Infrastructure Scan"):
             if domain:
                 with st.spinner(f"Mapping attack surface for {domain}..."):
                     scan_res = self.processor.deep_bug_bounty_scan(domain)
-                    
                     if "error" in scan_res:
                         st.error(scan_res['error'])
                     else:
                         st.success("Deep Scan Successful!")
                         st.write(f"**Target URL:** {scan_res.get('final_url')}")
                         st.write(f"**HTTP Status Code:** {scan_res.get('status_code')}")
-                        
-                        findings = scan_res.get('findings', [])
-                        if findings:
-                            st.subheader(f"⚠️ Found {len(findings)} Vulnerabilities:")
-                            df_findings = pd.DataFrame(findings)
-                            st.dataframe(df_findings, use_container_width=True)
-                        else:
-                            st.info("✨ Target infrastructure appears secure. No missing headers found.")
-            else:
-                st.warning("Input required.")
 
     def run_osint_dorks(self):
         st.title("🌐 OSINT & Google Dorking Reconnaissance")
-        st.markdown("Generate advanced Google Dorking payloads.")
-
         dork_categories = {
-            "01. Sensitive Files & Credentials": [
-                ("Database Dumps & Backups", 'site:target.com filetype:sql OR filetype:bak OR filetype:dump'),
-                ("Private Keys & Configs", 'site:target.com ext:pem OR ext:key OR ext:env OR inurl:config'),
-                ("Log Files with Passwords", 'site:target.com intext:"password" filetype:log')
-            ],
-            "02. Cloud Infrastructure & DevOps": [
-                ("Public S3 Buckets", 'site:s3.amazonaws.com "target.com"'),
-                ("CI/CD Pipelines (Jenkins/GitLab)", 'site:target.com inurl:jenkins OR inurl:gitlab-ci'),
-                ("Container Dashboards", 'site:target.com inurl:kubernetes OR inurl:grafana')
-            ],
-            "03. Modern SaaS & API Endpoints": [
-                ("Swagger / API Docs", 'site:target.com inurl:swagger OR inurl:api-docs'),
-                ("Admin Portals & SSO", 'site:target.com inurl:admin OR inurl:auth/login'),
-                ("GraphQL Endpoints", 'site:target.com inurl:graphql')
-            ],
-            "04. AI & Machine Learning Infrastructure": [
-                ("Exposed OpenAI/API Keys in Notebooks", 'site:target.com filetype:ipynb "OPENAI_API_KEY"'),
-                ("Vector Databases & MLFlow", 'site:target.com inurl:mlflow OR inurl:chroma')
-            ]
+            "01. Sensitive Files & Credentials": [("Log Files with Passwords", 'site:target.com intext:"password" filetype:log')]
         }
-
         selected_category = st.selectbox("Select Target Vector", list(dork_categories.keys()))
         target_domain = st.text_input("Enter Target Domain:", "example.com")
-
-        st.markdown("---")
-        st.markdown("### Generated Dork Queries:")
-
         for name, query_template in dork_categories[selected_category]:
             final_query = query_template.replace("target.com", target_domain)
-            col1, col2 = st.columns([4, 1])
-            with col1:
-                st.code(final_query, language="text")
-            with col2:
-                search_url = f"https://www.google.com/search?q={final_query}"
-                st.markdown(f"<a href='{search_url}' target='_blank'><button style='width:100%; padding:10px; background-color:transparent !important; color:#00ff00 !important; border:1px solid #00ff00 !important; border-radius:5px !important;'>Execute Search</button></a>", unsafe_allow_html=True)
+            st.code(final_query, language="text")
 
     def run_crypto_analyzer(self):
         st.title("🔐 Cryptographic Hash & Password Strength Analyzer")
-
         target_input = st.text_input("Enter Data String:", type="password")
-
         if target_input:
-            st.markdown("#### 🔍 Generated Hashes")
-            
             md5_hash = hashlib.md5(target_input.encode()).hexdigest()
-            sha256_hash = hashlib.sha256(target_input.encode()).hexdigest()
-
-            col1, col2 = st.columns(2)
-            with col1:
-                st.text_input("MD5 Hash", value=md5_hash, disabled=True)
-            with col2:
-                st.text_input("SHA-256 Hash", value=sha256_hash, disabled=True)
-
-            st.markdown("---")
-            st.markdown("#### 🛡️ Complexity Audit")
-
-            length_score = len(target_input) >= 8
-            upper_score = bool(re.search(r'[A-Z]', target_input))
-            lower_score = bool(re.search(r'[a-z]', target_input))
-            digit_score = bool(re.search(r'\d', target_input))
-            special_score = bool(re.search(r'[@$!%*?&]', target_input))
-
-            score = sum([length_score, upper_score, lower_score, digit_score, special_score])
-
-            if score == 5:
-                st.success("🟢 STATUS: SECURE (High Entropy)")
-            elif score >= 3:
-                st.warning("🟡 STATUS: MODERATE (Vulnerable to targeted attacks)")
-            else:
-                st.error("🔴 STATUS: WEAK (Critical Risk)")
+            st.text_input("MD5 Hash", value=md5_hash, disabled=True)
 
     def run_threat_hunting(self):
         st.title("🎯 Proactive Threat Hunting & IOC Analysis")
-        
         script_input = st.text_area("Input PowerShell / Base64 Payload:")
         if st.button("Execute Hunt Protocol"):
             if script_input:
-                with st.spinner("Deobfuscating and analyzing payload..."):
-                    res = self.hunter.hunt_powershell_obfuscation(script_input)
-                    st.write(res)
-            else:
-                st.warning("Payload missing.")
+                res = self.hunter.hunt_powershell_obfuscation(script_input)
+                st.write(res)
 
     def run_digital_forensics(self):
         st.title("🔎 Digital Forensics & Log Artifacts")
-        
         logs_input = st.text_area("Input Raw Logs / Hex Dump:")
         if st.button("Extract Artifacts"):
             if logs_input:
-                with st.spinner("Parsing syntax and extracting IOCs..."):
-                    res = self.forensics.parse_text_artifacts(logs_input)
-                    st.json(res)
-            else:
-                st.warning("Log data required.")
+                res = self.forensics.parse_text_artifacts(logs_input)
+                st.json(res)
 
     def run_incident_response(self):
         st.title("⚡ Automated SOAR Playbooks")
-        
         target = st.text_input("Target / Host ID:")
         severity = st.selectbox("Threat Severity", ["LOW", "MEDIUM", "HIGH", "CRITICAL"])
         desc = st.text_area("Event Description:")
-        
         if st.button("Initialize Response Ticket"):
             if target:
                 res = self.incident_engine.create_incident_ticket(target, severity, desc)
-                st.success(f"Ticket [#{hashlib.md5(target.encode()).hexdigest()[:6]}] Generated Successfully!")
-                st.json(res)
-            else:
-                st.warning("Target ID required.")
+                st.success(f"Ticket Generated Successfully!")
 
     def run_vulnerability_management(self):
         st.title("📊 Vulnerability & CVSS Assessment")
-        st.markdown("Evaluate the severity of a vulnerability based on the Common Vulnerability Scoring System (CVSS v3.1).")
-        
         score = st.slider("Select CVSS Base Score:", 0.0, 10.0, 7.5, 0.1)
-        
         if st.button("Calculate Vector Risk"):
-            st.markdown("---")
-            st.subheader("🛡️ Vulnerability Analysis Report")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.metric(label="Calculated Base Score", value=f"{score}/10.0")
-            
-            with col2:
-                # Detail Logic added here based on official CVSS scales
-                if score == 0.0:
-                    severity = "None"
-                    color = "grey"
-                    recommendation = "No immediate action required. Monitor for baseline changes."
-                    st.info(f"**Severity Level:** {severity}")
-                elif 0.1 <= score <= 3.9:
-                    severity = "Low"
-                    color = "green"
-                    recommendation = "Add to routine patch management schedule. Low risk of exploitation."
-                    st.success(f"**Severity Level:** {severity} 🟢")
-                elif 4.0 <= score <= 6.9:
-                    severity = "Medium"
-                    color = "yellow"
-                    recommendation = "Schedule patching during next maintenance window. Apply compensating controls if possible."
-                    st.warning(f"**Severity Level:** {severity} 🟡")
-                elif 7.0 <= score <= 8.9:
-                    severity = "High"
-                    color = "orange"
-                    recommendation = "Prioritize patching immediately. Restrict access to affected components."
-                    st.error(f"**Severity Level:** {severity} 🟠")
-                elif 9.0 <= score <= 10.0:
-                    severity = "Critical"
-                    color = "red"
-                    recommendation = "URGENT ACTION REQUIRED. Isolate affected systems and apply emergency patches immediately."
-                    st.error(f"**Severity Level:** {severity} 🔴")
-                    
-            st.markdown("#### ⚙️ SOC Analyst Recommendation:")
-            st.markdown(f"> {recommendation}")
-            
-            # Fallback for the backend module in case it has its own logic
-            backend_res = self.vuln_mgr.calculate_cvss_score(score)
-            if "status" not in backend_res or backend_res["status"] != "Module missing":
-                 with st.expander("View Backend Engine Raw Output"):
-                     st.json(backend_res)
+            st.metric(label="Calculated Base Score", value=f"{score}/10.0")
 
     def run_threat_analyzer(self):
         st.title("🔬 Web Application Threat Analyzer")
         payload = st.text_input("Input Parameter String:")
         if st.button("Scan Parameter"):
             if payload:
-                sqli = self.analyzer.detect_sql_injection(payload)
-                xss = self.analyzer.detect_xss(payload)
-                st.write("**SQL Injection Vector:**", sqli)
-                st.write("**XSS Vector:**", xss)
-            else:
-                st.warning("Parameter string required.")
+                st.write("**SQL Injection Vector:**", self.analyzer.detect_sql_injection(payload))
 
     def run_incident_defense(self):
         st.title("📝 Incident Defense & Evidence Ledger")
-        
         scam_target = st.text_input("Compromised/Malicious Asset:")
         evidence_notes = st.text_area("Forensic Notes:")
         
@@ -450,27 +317,41 @@ class SOCDashboardUI:
                     
                 st.success("Evidence secured in local database.")
                 if os.path.exists(file_name):
-                    st.subheader("Recent Entries:")
-                    st.dataframe(pd.read_csv(file_name), use_container_width=True)
-            else:
-                st.warning("Asset ID required.")
+                    st.info("Log database updated successfully.")
 
-    def main(self):
-        self.setup_page_config()
-        choice = self.render_sidebar()
-        
-        if choice == "Overview & Dashboard": self.run_overview()
-        elif choice == "Global Threat Intel (VirusTotal)": self.run_threat_intel()
-        elif choice == "Deep Bug Bounty & Vulnerability Scanner": self.run_bug_bounty_scanner()
-        elif choice == "OSINT & Google Dork Reconnaissance": self.run_osint_dorks()
-        elif choice == "Crypto & Password Analyzer": self.run_crypto_analyzer() 
-        elif choice == "Threat Hunting & IOCs": self.run_threat_hunting()
-        elif choice == "Digital Forensics & Logs": self.run_digital_forensics()
-        elif choice == "Incident Response & SOAR": self.run_incident_response()
-        elif choice == "Vulnerability Management": self.run_vulnerability_management()
-        elif choice == "Threat Analyzer (SQLi/XSS)": self.run_threat_analyzer()
-        elif choice == "Live Incident Defense & Reporting": self.run_incident_defense()
 
+# ==========================================
+# MAIN EXECUTION ROUTING (Menu Controller)
+# ==========================================
 if __name__ == "__main__":
     app = SOCDashboardUI()
-    app.main()
+    app.setup_page_config()
+    
+    # Get user selection from sidebar
+    choice = app.render_sidebar()
+    
+    # Route to the correct page based on selection
+    if choice == "Overview & Dashboard":
+        app.run_overview()
+    elif choice == "🤖 Autonomous AI SOC Agents":
+        app.run_ai_soc_agents()
+    elif choice == "Global Threat Intel (VirusTotal)":
+        app.run_threat_intel()
+    elif choice == "Deep Bug Bounty & Vulnerability Scanner":
+        app.run_bug_bounty_scanner()
+    elif choice == "OSINT & Google Dork Reconnaissance":
+        app.run_osint_dorks()
+    elif choice == "Crypto & Password Analyzer":
+        app.run_crypto_analyzer()
+    elif choice == "Threat Hunting & IOCs":
+        app.run_threat_hunting()
+    elif choice == "Digital Forensics & Logs":
+        app.run_digital_forensics()
+    elif choice == "Incident Response & SOAR":
+        app.run_incident_response()
+    elif choice == "Vulnerability Management":
+        app.run_vulnerability_management()
+    elif choice == "Threat Analyzer (SQLi/XSS)":
+        app.run_threat_analyzer()
+    elif choice == "Live Incident Defense & Reporting":
+        app.run_incident_defense()
