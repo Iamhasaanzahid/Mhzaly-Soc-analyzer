@@ -3,7 +3,7 @@ import streamlit as st
 from crewai import Agent, Task, Crew, Process
 
 # Streamlit secrets se API key uthana
-# Naya CrewAI LiteLLM use karta hai, is liye hum dono variable set kar rahe hain
+# Hum dono environment variables set kar rahe hain taaki LiteLLM ko key mil jaye
 os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
 os.environ["GEMINI_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
 
@@ -16,7 +16,7 @@ def run_autonomous_soc_analysis(logs_data):
         backstory='Aap ek expert SOC analyst hain. Aapka kaam network logs, web traffic, aur server logs mein chhupe hue attacks ko pakarna hai.',
         verbose=True,
         allow_delegation=False,
-        llm='gemini/gemini-1.5-flash'  # <-- Yahan 'flash' kar diya gaya hai
+        llm='gemini/gemini-1.5-flash'  # <-- Yahan 'gemini/' prefix hona zaroori hai
     )
 
     incident_responder = Agent(
@@ -25,7 +25,7 @@ def run_autonomous_soc_analysis(logs_data):
         backstory='Aap ek action-oriented security expert hain. Jab attack pakra jata hai, toh aap block list aur firewall rules update karne ka plan banate hain.',
         verbose=True,
         allow_delegation=False,
-        llm='gemini/gemini-1.5-flash'  # <-- Yahan bhi 'flash' kar diya gaya hai
+        llm='gemini/gemini-1.5-flash'  # <-- Yahan bhi 'gemini/' prefix hona zaroori hai
     )
 
     soc_manager = Agent(
@@ -34,7 +34,7 @@ def run_autonomous_soc_analysis(logs_data):
         backstory='Aap MHZALY SOC team ke head hain. Aap technical baaton ko aasan aur professional language mein convert karke final report banate hain.',
         verbose=True,
         allow_delegation=True,
-        llm='gemini/gemini-1.5-flash'  # <-- Aur yahan bhi 'flash' kar diya gaya hai
+        llm='gemini/gemini-1.5-flash'  # <-- Aur yahan bhi 'gemini/' prefix hona zaroori hai
     )
 
     # 2. TASKS DEFINITION
