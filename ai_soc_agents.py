@@ -16,7 +16,7 @@ def run_autonomous_soc_analysis(logs_data):
         backstory='Aap ek expert SOC analyst hain. Aapka kaam network logs, web traffic, aur server logs mein chhupe hue attacks ko pakarna hai.',
         verbose=True,
         allow_delegation=False,
-        llm='gemini/gemini-1.5-pro'  # <-- Yahan tabdeeli ki gayi hai
+        llm='gemini/gemini-1.5-flash'  # <-- Yahan 'flash' kar diya gaya hai
     )
 
     incident_responder = Agent(
@@ -25,7 +25,7 @@ def run_autonomous_soc_analysis(logs_data):
         backstory='Aap ek action-oriented security expert hain. Jab attack pakra jata hai, toh aap block list aur firewall rules update karne ka plan banate hain.',
         verbose=True,
         allow_delegation=False,
-        llm='gemini/gemini-1.5-pro'  # <-- Yahan tabdeeli ki gayi hai
+        llm='gemini/gemini-1.5-flash'  # <-- Yahan bhi 'flash' kar diya gaya hai
     )
 
     soc_manager = Agent(
@@ -34,7 +34,7 @@ def run_autonomous_soc_analysis(logs_data):
         backstory='Aap MHZALY SOC team ke head hain. Aap technical baaton ko aasan aur professional language mein convert karke final report banate hain.',
         verbose=True,
         allow_delegation=True,
-        llm='gemini/gemini-1.5-pro'  # <-- Yahan tabdeeli ki gayi hai
+        llm='gemini/gemini-1.5-flash'  # <-- Aur yahan bhi 'flash' kar diya gaya hai
     )
 
     # 2. TASKS DEFINITION
