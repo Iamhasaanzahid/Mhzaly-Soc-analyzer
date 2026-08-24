@@ -1,13 +1,11 @@
 import os
 import streamlit as st
 from crewai import Agent, Task, Crew, Process
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 # Streamlit secrets se API key uthana
+# Naya CrewAI LiteLLM use karta hai, is liye hum dono variable set kar rahe hain
 os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
-
-# Gemini Model Setup
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro")
+os.environ["GEMINI_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
 
 def run_autonomous_soc_analysis(logs_data):
     
@@ -18,7 +16,7 @@ def run_autonomous_soc_analysis(logs_data):
         backstory='Aap ek expert SOC analyst hain. Aapka kaam network logs, web traffic, aur server logs mein chhupe hue attacks ko pakarna hai.',
         verbose=True,
         allow_delegation=False,
-        llm=llm
+        llm='gemini/gemini-1.5-pro'  # <-- Yahan tabdeeli ki gayi hai
     )
 
     incident_responder = Agent(
@@ -27,7 +25,7 @@ def run_autonomous_soc_analysis(logs_data):
         backstory='Aap ek action-oriented security expert hain. Jab attack pakra jata hai, toh aap block list aur firewall rules update karne ka plan banate hain.',
         verbose=True,
         allow_delegation=False,
-        llm=llm
+        llm='gemini/gemini-1.5-pro'  # <-- Yahan tabdeeli ki gayi hai
     )
 
     soc_manager = Agent(
@@ -36,7 +34,7 @@ def run_autonomous_soc_analysis(logs_data):
         backstory='Aap MHZALY SOC team ke head hain. Aap technical baaton ko aasan aur professional language mein convert karke final report banate hain.',
         verbose=True,
         allow_delegation=True,
-        llm=llm
+        llm='gemini/gemini-1.5-pro'  # <-- Yahan tabdeeli ki gayi hai
     )
 
     # 2. TASKS DEFINITION
