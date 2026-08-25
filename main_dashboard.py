@@ -67,7 +67,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Defense Platform"
-        self.version = "20.0 Elite Production"
+        self.version = "21.0 Elite Production"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -478,11 +478,57 @@ class SOCDashboardUI:
 
     def run_threat_hunting(self):
         st.title("🎯 Proactive Threat Hunting & IOC Analysis")
-        script_input = st.text_area("Input PowerShell / Base64 Script Payload:")
+        st.markdown("Deep payload deobfuscation, PowerShell technique inspection, and automated IOC extraction.")
+        
+        script_input = st.text_area("Input PowerShell / Base64 Script Payload:", height=120)
         if st.button("Execute Hunt Protocol"):
             if script_input:
-                res = self.hunter.hunt_powershell_obfuscation(script_input)
-                st.write(res)
+                with st.spinner("Deobfuscating script and analyzing heuristic indicators..."):
+                    res = self.hunter.hunt_powershell_obfuscation(script_input)
+                    
+                    if "error" in res:
+                        st.error(res["error"])
+                    else:
+                        st.success("Heuristic Hunt Protocol Complete!")
+                        
+                        # Top Metrics
+                        c1, c2, c3 = st.columns(3)
+                        c1.metric("Threat Severity", res.get("severity", "UNKNOWN"))
+                        c2.metric("Heuristic Risk Score", f"{res.get('risk_score', 0)} / 100")
+                        c3.metric("Decoded Chunks", len(res.get("decoded_payloads", [])))
+                        
+                        st.markdown("---")
+                        
+                        # 1. Obfuscation Techniques Table
+                        st.markdown("### 🔬 Obfuscation & Evasion Techniques")
+                        findings = res.get("findings", [])
+                        if findings:
+                            st.dataframe(pd.DataFrame(findings), use_container_width=True, hide_index=True)
+                        else:
+                            st.info("No suspicious execution switches or evasion patterns detected.")
+                        
+                        # 2. Deobfuscated / Decoded Strings
+                        decoded = res.get("decoded_payloads", [])
+                        if decoded:
+                            st.markdown("### 🔓 Extracted & Decoded Cleartext Payloads")
+                            for idx, item in enumerate(decoded, 1):
+                                st.code(f"[{idx}] {item}", language="powershell")
+                                
+                        # 3. Extracted IOCs Table
+                        st.markdown("### 🛡️ Extracted Threat Indicators (IOCs)")
+                        iocs = res.get("iocs", {})
+                        ioc_rows = []
+                        if isinstance(iocs, dict):
+                            for ioc_type, vals in iocs.items():
+                                for val in vals:
+                                    ioc_rows.append({"IOC Type": ioc_type, "Extracted Value": val})
+                                    
+                        if ioc_rows:
+                            st.dataframe(pd.DataFrame(ioc_rows), use_container_width=True, hide_index=True)
+                        else:
+                            st.info("No explicit IPs, URLs, or File Paths extracted from payload.")
+            else:
+                st.warning("Please provide a script payload to analyze.")
 
     def run_digital_forensics(self):
         st.title("🔎 Digital Forensics & Log Artifact Extraction")
