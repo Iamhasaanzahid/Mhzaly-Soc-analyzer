@@ -14,17 +14,24 @@ def render_osint_dorks_module():
             ("Private Keys & Environment Configs", 'site:target.com (ext:pem OR ext:key OR ext:env OR inurl:config)', "Critical"),
             ("Exposed Log Files with Passwords", 'site:target.com intext:"password" filetype:log', "High")
         ],
-        "02. Cloud Infrastructure & DevOps": [
+        "02. WordPress Security & Reconnaissance": [
+            ("Exposed WP-Config & Backups", 'site:target.com (inurl:wp-config.php OR inurl:wp-config.bak)', "Critical"),
+            ("Vulnerable / Exposed Plugins", 'site:target.com inurl:/wp-content/plugins/', "High"),
+            ("Uploaded Media & File Dorks", 'site:target.com inurl:/wp-content/uploads/', "Medium"),
+            ("WordPress Author Enumeration", 'site:target.com/?author=', "Medium"),
+            ("Exposed XML-RPC Endpoints", 'site:target.com inurl:xmlrpc.php', "High")
+        ],
+        "03. Cloud Infrastructure & DevOps": [
             ("Public S3 Buckets", 'site:s3.amazonaws.com "target.com"', "High"),
             ("CI/CD Automation Pipelines", 'site:target.com (inurl:jenkins OR inurl:gitlab-ci)', "Medium"),
             ("Container Dashboards & Telemetry", 'site:target.com (inurl:kubernetes OR inurl:grafana)', "High")
         ],
-        "03. Modern SaaS & API Endpoints": [
+        "04. Modern SaaS & API Endpoints": [
             ("Swagger / API Documentation", 'site:target.com (inurl:swagger OR inurl:api-docs)', "Medium"),
             ("Admin Portals & SSO Endpoints", 'site:target.com (inurl:admin OR inurl:auth/login)', "Medium"),
             ("GraphQL Endpoints", 'site:target.com inurl:graphql', "Low")
         ],
-        "04. AI & ML Infrastructure": [
+        "05. AI & ML Infrastructure": [
             ("Exposed OpenAI/API Tokens in Notebooks", 'site:target.com filetype:ipynb "OPENAI_API_KEY"', "Critical"),
             ("Vector Databases & MLflow Tracking", 'site:target.com (inurl:mlflow OR inurl:chroma)', "Medium")
         ]
