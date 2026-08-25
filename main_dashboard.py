@@ -66,7 +66,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Defense Platform"
-        self.version = "17.0 Elite Production"
+        self.version = "18.0 Elite Production"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -376,7 +376,9 @@ class SOCDashboardUI:
 
     def run_bug_bounty_scanner(self):
         st.title("🔍 Infrastructure & Security Header Analyzer")
-        domain = st.text_input("Enter Target Domain:")
+        st.markdown("Perform deep security header analysis and vulnerability mapping for bug bounty assessment:")
+        
+        domain = st.text_input("Enter Target Domain (e.g., example.com):")
         if st.button("Execute Infrastructure Scan"):
             if domain:
                 with st.spinner(f"Mapping attack surface and inspecting headers for {domain}..."):
@@ -385,8 +387,31 @@ class SOCDashboardUI:
                         st.error(scan_res['error'])
                     else:
                         st.success("Infrastructure Scan Successful!")
-                        st.write(f"**Target URL:** {scan_res.get('final_url')}")
-                        st.write(f"**HTTP Status Code:** {scan_res.get('status_code')}")
+                        
+                        c1, c2 = st.columns(2)
+                        c1.metric("Target Final URL", scan_res.get('final_url'))
+                        c2.metric("HTTP Status Code", scan_res.get('status_code'))
+                        
+                        st.markdown("---")
+                        st.markdown("### 🛡️ Security Header Vulnerability Breakdown")
+                        
+                        findings = scan_res.get('findings', [])
+                        if findings:
+                            df_findings = pd.DataFrame(findings)
+                            
+                            risk_filter = st.selectbox("Filter Findings by Risk Level", ["All Findings", "High & Medium Risks Only", "Secure / Low Only"])
+                            
+                            if risk_filter == "High & Medium Risks Only":
+                                df_findings = df_findings[df_findings['Risk'].isin(['High', 'Medium'])]
+                            elif risk_filter == "Secure / Low Only":
+                                df_findings = df_findings[df_findings['Risk'].isin(['Secure', 'Low'])]
+                                
+                            st.dataframe(df_findings, use_container_width=True, hide_index=True)
+                            st.info("💡 Recommendation: Fix missing security headers to harden web infrastructure against clickjacking and XSS attacks.")
+                        else:
+                            st.info("No findings reported.")
+            else:
+                st.warning("Please enter a target domain.")
 
     def run_osint_dorks(self):
         st.title("🌐 OSINT & Reconnaissance Utility")
@@ -495,7 +520,7 @@ if __name__ == "__main__":
         app.run_incident_response()
     elif choice == "Vulnerability Management":
         app.run_vulnerability_management()
-    elif choice == "WebApplication Threat Analyzer":
+    elif choice == "Web Application Threat Analyzer":
         app.run_threat_analyzer()
     elif choice == "Live Incident Defense & Reporting":
         app.run_incident_defense()
