@@ -22,15 +22,18 @@ class ThreatIntelProcessor:
         self.vt_api_key = self._get_vt_api_key()
 
     def _get_vt_api_key(self):
-        # 1. Try fetching from Streamlit Cloud Secrets first (for live website)
+        # 1. Try fetching from Streamlit Cloud Secrets first (Supports both keys)
         try:
-            if hasattr(st, "secrets") and "VIRUSTOTAL_API_KEY" in st.secrets:
-                return st.secrets["VIRUSTOTAL_API_KEY"]
+            if hasattr(st, "secrets"):
+                if "VIRUSTOTAL_API_KEY" in st.secrets:
+                    return st.secrets["VIRUSTOTAL_API_KEY"]
+                if "VT_API_KEY" in st.secrets:
+                    return st.secrets["VT_API_KEY"]
         except Exception:
             pass
         
         # 2. Fallback to local .env or environment variable (for local computer)
-        return os.getenv("VT_API_KEY")
+        return os.getenv("VT_API_KEY") or os.getenv("VIRUSTOTAL_API_KEY")
 
     # --- REAL WORLD API SCANNER (VirusTotal Global Intel) ---
     def scan_target(self, target):
