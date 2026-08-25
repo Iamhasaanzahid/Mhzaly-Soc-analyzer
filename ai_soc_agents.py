@@ -2,10 +2,18 @@ import os
 import streamlit as st
 from crewai import Agent, Task, Crew, Process
 
-# Streamlit secrets se API key uthana
-# Hum dono environment variables set kar rahe hain taaki LiteLLM ko key mil jaye
-os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
-os.environ["GEMINI_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
+# Local aur Cloud dono ke liye safe tareeqa (Try st.secrets first, then fallback to .env)
+try:
+    google_key = st.secrets["GOOGLE_API_KEY"]
+    gemini_key = st.secrets["GEMINI_API_KEY"]
+except Exception:
+    import dotenv
+    dotenv.load_dotenv()
+    google_key = os.getenv("GOOGLE_API_KEY")
+    gemini_key = os.getenv("GEMINI_API_KEY")
+
+os.environ["GOOGLE_API_KEY"] = google_key
+os.environ["GEMINI_API_KEY"] = gemini_key
 
 def run_autonomous_soc_analysis(logs_data):
     
@@ -16,7 +24,7 @@ def run_autonomous_soc_analysis(logs_data):
         backstory='Aap ek expert SOC analyst hain. Aapka kaam network logs, web traffic, aur server logs mein chhupe hue attacks ko pakarna hai.',
         verbose=True,
         allow_delegation=False,
-        llm='gemini/gemini-1.5-flash'  # <-- Yahan 'gemini/' prefix hona zaroori hai
+        llm='gemini/gemini-1.5-flash'
     )
 
     incident_responder = Agent(
@@ -25,7 +33,7 @@ def run_autonomous_soc_analysis(logs_data):
         backstory='Aap ek action-oriented security expert hain. Jab attack pakra jata hai, toh aap block list aur firewall rules update karne ka plan banate hain.',
         verbose=True,
         allow_delegation=False,
-        llm='gemini/gemini-1.5-flash'  # <-- Yahan bhi 'gemini/' prefix hona zaroori hai
+        llm='gemini/gemini-1.5-flash'
     )
 
     soc_manager = Agent(
@@ -34,7 +42,7 @@ def run_autonomous_soc_analysis(logs_data):
         backstory='Aap MHZALY SOC team ke head hain. Aap technical baaton ko aasan aur professional language mein convert karke final report banate hain.',
         verbose=True,
         allow_delegation=True,
-        llm='gemini/gemini-1.5-flash'  # <-- Aur yahan bhi 'gemini/' prefix hona zaroori hai
+        llm='gemini/gemini-1.5-flash'
     )
 
     # 2. TASKS DEFINITION
