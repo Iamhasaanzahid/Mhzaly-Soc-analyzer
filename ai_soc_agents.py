@@ -1,29 +1,17 @@
 import os
-import streamlit as st
 from dotenv import load_dotenv
 from crewai import Agent, Task, Crew, Process
 
-# 1. Sabse pehle local computer ki .env file load karein
+# Seedhe aapki .env file se API key utا lega (Koi st.secrets ka chakkar nahi)
 load_dotenv()
 
-# 2. Local environment se keys uthane ki koshish karein
-google_key = os.getenv("GOOGLE_API_KEY")
-gemini_key = os.getenv("GEMINI_API_KEY")
-
-# 3. Agar local .env mein keys na milein, tab Streamlit Cloud ke secrets check karein
-if not google_key:
-    try:
-        google_key = st.secrets["GOOGLE_API_KEY"]
-        gemini_key = st.secrets["GEMINI_API_KEY"]
-    except Exception:
-        pass
-
-os.environ["GOOGLE_API_KEY"] = google_key or ""
-os.environ["GEMINI_API_KEY"] = gemini_key or ""
+# Yahan apni Google API key direct bhi daal sakte hain taaki kabhi error na aaye
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") or "AQ.Ab8RN6KixkLrHNZPohMZxmaxJfR9h2cGG9Pf1vC1HTCRU4Iz4w"
+os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
+os.environ["GEMINI_API_KEY"] = GOOGLE_API_KEY
 
 def run_autonomous_soc_analysis(logs_data):
     
-    # 1. AGENTS DEFINITION
     threat_analyzer = Agent(
         role='Senior Threat Hunter & Log Analyzer',
         goal='Analyze system logs to identify cyber attacks, anomalies, and malicious IPs.',
@@ -51,7 +39,6 @@ def run_autonomous_soc_analysis(logs_data):
         llm='gemini/gemini-1.5-flash'
     )
 
-    # 2. TASKS DEFINITION
     analyze_task = Task(
         description=f'In logs ko ghaur se parhein aur attack identify karein: \n\n{logs_data}',
         expected_output='Detailed list with malicious IPs and attack types.',
@@ -70,7 +57,6 @@ def run_autonomous_soc_analysis(logs_data):
         agent=soc_manager
     )
 
-    # 3. CREW SETUP
     soc_crew = Crew(
         agents=[threat_analyzer, incident_responder, soc_manager],
         tasks=[analyze_task, mitigation_task, final_report_task],
