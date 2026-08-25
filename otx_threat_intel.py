@@ -1,33 +1,50 @@
-# otx_threat_intel.py - AlienVault OTX Threat Intelligence Integration
+# otx_threat_intel.py - Advanced AlienVault OTX Threat Intelligence Integration
 import requests
 
 class OTXThreatIntel:
     def __init__(self):
-        # OTX ki public API free hai, iske liye complex keys ki zaroorat nahi parti
         self.base_url = "https://otx.alienvault.com/api/v1/indicators"
 
     def check_indicator(self, indicator_type, query):
         try:
             if indicator_type == "IP":
-                url = f"{self.base_url}/ip/{query}/general"
+                endpoint = f"ip/{query}/general"
             elif indicator_type == "Domain":
-                url = f"{self.base_url}/domain/{query}/general"
+                endpoint = f"domain/{query}/general"
             else:
                 return {"error": "Invalid indicator type selected."}
 
+            url = f"{self.base_url}/{endpoint}"
             response = requests.get(url, timeout=10)
+            
             if response.status_code == 200:
                 data = response.json()
                 pulse_info = data.get("pulse_info", {})
                 count = pulse_info.get("count", 0)
+                pulses = pulse_info.get("pulses", [])
                 
+                # Extract rich details from pulses for professional SOC analytics
+                detailed_pulses = []
+                for p in pulses:
+                    detailed_pulses.append({
+                        "Pulse Name": p.get("name", "Unknown Campaign"),
+                        "Author": p.get("author_name", "Anonymous"),
+                        "Created": p.get("created", "")[:10],
+                        "Description": p.get("description", "No description provided.")[:150] + "...",
+                        "Tags": ", ".join(p.get("tags", []))
+                    })
+
                 return {
                     "query": query,
                     "threat_pulse_count": count,
+                    "country": data.get("country_name", "N/A"),
+                    "asn": data.get("asn", "N/A"),
+                    "malware_families": data.get("malware_families", []),
+                    "detailed_pulses": detailed_pulses,
                     "references": pulse_info.get("references", []),
                     "status": "Success"
                 }
             else:
-                return {"error": f"API returned status code {response.status_code}"}
+                return {"error": f"OTX API returned status code {response.status_code}"}
         except Exception as e:
             return {"error": str(e)}
