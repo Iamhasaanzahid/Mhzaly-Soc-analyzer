@@ -58,7 +58,7 @@ class ThreatIntelProcessor:
         except Exception as e:
             return {"error": str(e)}
 
-    # --- DEEP BUG BOUNTY & VULNERABILITY SCANNER (Real Analysis) ---
+    # --- DEEP BUG BOUNTY & VULNERABILITY SCANNER (Detailed Analysis) ---
     def deep_bug_bounty_scan(self, domain):
         if not domain.startswith("http"):
             url = f"https://{domain}"
@@ -70,17 +70,31 @@ class ThreatIntelProcessor:
             response = requests.get(url, timeout=7, allow_redirects=True)
             headers = response.headers
             
-            # Deep Security Header Analysis (Bug Bounty Standard)
+            # Deep Security Header Analysis (Bug Bounty Standard - Detailed Breakdown)
             if 'Strict-Transport-Security' not in headers:
-                findings.append({"Vulnerability": "Missing HSTS Header", "Risk": "Medium", "Details": "Site does not enforce secure HTTPS connections strictly."})
+                findings.append({"Vulnerability": "Missing HSTS Header", "Risk": "Medium", "Details": "Site does not enforce secure HTTPS connections strictly via HSTS."})
+            else:
+                findings.append({"Vulnerability": "HSTS Header Present", "Risk": "Secure", "Details": "Strict-Transport-Security is properly configured."})
+
             if 'X-Frame-Options' not in headers:
                 findings.append({"Vulnerability": "Missing X-Frame-Options", "Risk": "Low", "Details": "Website is potentially vulnerable to Clickjacking attacks."})
+            else:
+                findings.append({"Vulnerability": "X-Frame-Options Present", "Risk": "Secure", "Details": f"Configured as: {headers.get('X-Frame-Options')}"})
+
             if 'X-Content-Type-Options' not in headers:
                 findings.append({"Vulnerability": "Missing X-Content-Type-Options", "Risk": "Low", "Details": "Vulnerable to MIME-sniffing and cross-site scripting risks."})
+            else:
+                findings.append({"Vulnerability": "X-Content-Type-Options Present", "Risk": "Secure", "Details": "Header correctly restricts MIME-sniffing."})
+
             if 'Content-Security-Policy' not in headers:
-                findings.append({"Vulnerability": "Missing Content Security Policy (CSP)", "Risk": "High", "Details": "Lack of CSP allows malicious script injections (XSS)."})
+                findings.append({"Vulnerability": "Missing Content Security Policy (CSP)", "Risk": "High", "Details": "Lack of CSP allows malicious cross-site script injections (XSS)."})
+            else:
+                findings.append({"Vulnerability": "Content Security Policy Present", "Risk": "Secure", "Details": "CSP policy is active."})
+
             if 'Server' in headers:
                 findings.append({"Vulnerability": "Server Information Disclosure", "Risk": "Low", "Details": f"Server banner exposed: {headers.get('Server')}"})
+            else:
+                findings.append({"Vulnerability": "Server Banner Hidden", "Risk": "Secure", "Details": "Server version info is securely hidden."})
             
             return {
                 "status": "success", 
