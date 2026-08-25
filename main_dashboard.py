@@ -422,12 +422,10 @@ class SOCDashboardUI:
                         if findings:
                             df_findings = pd.DataFrame(findings)
                             st.dataframe(df_findings, use_container_width=True, hide_index=True)
-            else:
-                st.warning("Please provide a domain to scan.")
 
     def run_osint_dorks(self):
-        st.title("🌐 OSINT & Google Dork Reconnaissance Utility")
-        st.markdown("Automate search-engine intelligence footprinting and exposed cloud asset reconnaissance.")
+        st.title("🌐 OSINT & Google Dork Reconnaissance")
+        st.markdown("Automate open-source intelligence footprinting and defensive reconnaissance queries for target assets, including WordPress infrastructure.")
 
         dork_categories = {
             "01. Sensitive Files & Credentials": [
@@ -435,26 +433,47 @@ class SOCDashboardUI:
                 ("Private Keys & Environment Configs", 'site:target.com (ext:pem OR ext:key OR ext:env OR inurl:config)', "Critical"),
                 ("Exposed Log Files with Passwords", 'site:target.com intext:"password" filetype:log', "High")
             ],
-            "02. Cloud Infrastructure & DevOps": [
+            "02. WordPress Security & Reconnaissance": [
+                ("Exposed WP-Config & Backups", 'site:target.com (inurl:wp-config.php OR inurl:wp-config.bak)', "Critical"),
+                ("Vulnerable / Exposed Plugins", 'site:target.com inurl:/wp-content/plugins/', "High"),
+                ("Uploaded Media & File Dorks", 'site:target.com inurl:/wp-content/uploads/', "Medium"),
+                ("WordPress Author Enumeration", 'site:target.com/?author=', "Medium"),
+                ("Exposed XML-RPC Endpoints", 'site:target.com inurl:xmlrpc.php', "High")
+            ],
+            "03. Cloud Infrastructure & DevOps": [
                 ("Public S3 Buckets", 'site:s3.amazonaws.com "target.com"', "High"),
                 ("CI/CD Automation Pipelines", 'site:target.com (inurl:jenkins OR inurl:gitlab-ci)', "Medium"),
                 ("Container Dashboards & Telemetry", 'site:target.com (inurl:kubernetes OR inurl:grafana)', "High")
             ],
-            "03. Modern SaaS & API Endpoints": [
+            "04. Modern SaaS & API Endpoints": [
                 ("Swagger / API Documentation", 'site:target.com (inurl:swagger OR inurl:api-docs)', "Medium"),
-                ("Admin Portals & SSO Endpoints", 'site:target.com (inurl:admin OR inurl:auth/login)', "Medium")
+                ("Admin Portals & SSO Endpoints", 'site:target.com (inurl:admin OR inurl:auth/login)', "Medium"),
+                ("GraphQL Endpoints", 'site:target.com inurl:graphql', "Low")
+            ],
+            "05. AI & ML Infrastructure": [
+                ("Exposed OpenAI/API Tokens in Notebooks", 'site:target.com filetype:ipynb "OPENAI_API_KEY"', "Critical"),
+                ("Vector Databases & MLflow Tracking", 'site:target.com (inurl:mlflow OR inurl:chroma)', "Medium")
             ]
         }
 
-        target_domain = st.text_input("Enter Target Domain:", placeholder="e.g., example.com")
-        clean_domain = target_domain.replace("https://", "").replace("http://", "").strip("/").split("/")[0] if target_domain else "target.com"
+        target_domain = st.text_input("Enter Target Domain (e.g., example.com):", "example.com")
+        clean_domain = target_domain.replace("https://", "").replace("http://", "").strip("/").split("/")[0]
 
-        selected_category = st.selectbox("Select Reconnaissance Category", list(dork_categories.keys()))
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            selected_category = st.selectbox("Select Reconnaissance Category", list(dork_categories.keys()))
+        with col2:
+            st.metric("Target Asset", clean_domain, "Domain Active")
+
+        st.markdown("---")
+        st.markdown(f"### 🎯 Active Query Set: {selected_category}")
+
         recon_records = []
         for name, query_template, risk in dork_categories[selected_category]:
             final_query = query_template.replace("target.com", clean_domain)
             encoded_query = urllib.parse.quote(final_query)
             search_url = f"https://www.google.com/search?q={encoded_query}"
+            
             recon_records.append({
                 "Vector Objective": name,
                 "Risk Rating": risk,
@@ -464,290 +483,97 @@ class SOCDashboardUI:
 
         df_recon = pd.DataFrame(recon_records)
         st.dataframe(df_recon[["Vector Objective", "Risk Rating", "Google Dork Payload"]], use_container_width=True, hide_index=True)
+
         st.markdown("### 🚀 Live Search Actions")
         for item in recon_records:
-            st.markdown(f"- **{item['Vector Objective']}**: [Launch Query on Search Engine ↗]({item['Launch URL']})")
+            st.markdown(f"- **{item['Vector Objective']}** (`{item['Risk Rating']}`): [Launch Query on Search Engine ↗]({item['Launch URL']})")
 
     def run_crypto_analyzer(self):
         st.title("🔐 Cryptographic Hash & Password Strength Analyzer")
-        st.markdown("Generate forensic checksums and cryptographic digest fingerprints.")
-        
-        target_input = st.text_input("Enter Data String / Password:", type="password", placeholder="Enter raw string to calculate digests...")
+        st.markdown("Analyze entropy, compute cryptographic hashes, and validate secret keys.")
+        target_input = st.text_input("Enter Data String / Password:", type="password")
         if target_input:
             md5_hash = hashlib.md5(target_input.encode()).hexdigest()
             sha256_hash = hashlib.sha256(target_input.encode()).hexdigest()
-            st.text_input("MD5 Hash (Hex)", value=md5_hash, disabled=True)
-            st.text_input("SHA-256 Hash (Hex)", value=sha256_hash, disabled=True)
+            
+            st.text_input("MD5 Hash", value=md5_hash, disabled=True)
+            st.text_input("SHA-256 Hash", value=sha256_hash, disabled=True)
+            
+            length = len(target_input)
+            if length >= 12:
+                st.success("🟢 Strong Password Length (12+ characters)")
+            else:
+                st.warning("⚠️ Weak Password Length: Recommended minimum length is 12 characters.")
 
     def run_threat_hunting(self):
         st.title("🎯 Proactive Threat Hunting & IOC Analysis")
-        st.markdown("Deobfuscate suspicious PowerShell scripts, decode Base64 strings, and extract threat IOCs.")
-        
-        script_input = st.text_area("Input PowerShell / Base64 Script Payload:", placeholder="Paste raw or obfuscated script commands here...", height=120)
+        st.markdown("Analyze obfuscated PowerShell scripts and command line execution telemetry.")
+        script_input = st.text_area("Input PowerShell / Base64 Payload:", placeholder="Paste base64 encoded or obfuscated command line strings...")
         if st.button("Execute Hunt Protocol"):
             if script_input:
-                with st.spinner("Deobfuscating script and analyzing heuristic indicators..."):
-                    res = self.hunter.hunt_powershell_obfuscation(script_input)
-                    if "error" in res:
-                        st.error(res["error"])
-                    else:
-                        st.success("Heuristic Hunt Protocol Complete!")
-                        c1, c2, c3 = st.columns(3)
-                        c1.metric("Threat Severity", res.get("severity", "UNKNOWN"))
-                        c2.metric("Heuristic Risk Score", f"{res.get('risk_score', 0)} / 100")
-                        c3.metric("Decoded Payloads", len(res.get("decoded_payloads", [])))
-                        
-                        st.markdown("---")
-                        findings = res.get("findings", [])
-                        if findings:
-                            st.dataframe(pd.DataFrame(findings), use_container_width=True, hide_index=True)
-                        
-                        decoded = res.get("decoded_payloads", [])
-                        if decoded:
-                            st.markdown("### 🔓 Extracted & Decoded Cleartext Payloads")
-                            for idx, item in enumerate(decoded, 1):
-                                st.code(f"[{idx}] {item}", language="powershell")
-                                
-                        iocs = res.get("iocs", {})
-                        ioc_rows = []
-                        if isinstance(iocs, dict):
-                            for ioc_type, vals in iocs.items():
-                                for val in vals:
-                                    ioc_rows.append({"IOC Type": ioc_type, "Extracted Value": val})
-                        if ioc_rows:
-                            st.markdown("### 🛡️ Extracted Threat Indicators (IOCs)")
-                            st.dataframe(pd.DataFrame(ioc_rows), use_container_width=True, hide_index=True)
+                res = self.hunter.hunt_powershell_obfuscation(script_input)
+                st.json(res)
             else:
-                st.warning("Please provide a script payload to analyze.")
+                st.warning("Please provide a payload to hunt.")
 
     def run_digital_forensics(self):
-        st.title("🔎 Digital Forensics & Log Artifact Extraction")
-        st.markdown("Extract forensic artifacts, cryptographic hashes, network indicators, and system paths from raw memory dumps.")
-        
-        logs_input = st.text_area("Input Raw Logs / Hex Dump / Memory Strings:", placeholder="Paste forensic memory dump or raw log strings here...", height=140)
+        st.title("🔎 Digital Forensics & Log Artifacts")
+        st.markdown("Extract forensic artifacts, timestamps, and indicators of compromise from raw dumps.")
+        logs_input = st.text_area("Input Raw Logs / Hex Dump:", placeholder="Paste raw event artifacts or logs here...")
         if st.button("Extract Artifacts"):
             if logs_input:
-                with st.spinner("Parsing memory dump and extracting forensic indicators..."):
-                    res = self.forensics.parse_text_artifacts(logs_input)
-                    if "error" in res:
-                        st.error(res["error"])
-                    else:
-                        st.success("Artifact Extraction Protocol Completed!")
-                        artifacts = res.get("artifacts", {})
-                        
-                        c1, c2, c3, c4 = st.columns(4)
-                        c1.metric("IPs Extracted", len(artifacts.get("IPv4 Address", [])))
-                        c2.metric("Hashes (MD5/SHA256)", len(artifacts.get("MD5 Hash", [])) + len(artifacts.get("SHA256 Hash", [])))
-                        c3.metric("URLs & Endpoints", len(artifacts.get("C2 / Web URL", [])))
-                        c4.metric("File Paths", len(artifacts.get("Windows File Path", [])))
-                        
-                        st.markdown("---")
-                        st.markdown("### 📋 Extracted Forensic Evidence Matrix")
-                        table_rows = []
-                        for art_type, val_list in artifacts.items():
-                            for val in val_list:
-                                table_rows.append({"Artifact Category": art_type, "Extracted Forensic Value": val})
-                        if table_rows:
-                            df_forensics = pd.DataFrame(table_rows)
-                            category_filter = st.selectbox("Filter Artifact Type", ["All Artifacts"] + list(artifacts.keys()))
-                            if category_filter != "All Artifacts":
-                                df_forensics = df_forensics[df_forensics["Artifact Category"] == category_filter]
-                            st.dataframe(df_forensics, use_container_width=True, hide_index=True)
+                res = self.forensics.parse_text_artifacts(logs_input)
+                st.json(res)
             else:
-                st.warning("Please paste raw logs or dump strings.")
+                st.warning("Please provide forensic data.")
 
     def run_incident_response(self):
-        st.title("⚡ Incident Response & SOAR Playbooks")
-        st.markdown("Automate incident triage, issue tracking tickets, and trigger defensive SOAR playbooks.")
-        
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            target = st.text_input("Compromised Asset / Host ID:", placeholder="e.g., SRV-FINANCE-01 or 192.168.10.45")
-        with col2:
-            severity = st.selectbox("Incident Severity", ["CRITICAL", "HIGH", "MEDIUM", "LOW"], index=1)
-            
-        desc = st.text_area("Event Description & Scope:", placeholder="Describe the unauthorized activity, suspected lateral movement, or IOCs...", height=100)
-        
-        if st.button("Initialize Response Ticket & Execute SOAR Playbook"):
-            if target and desc:
-                ticket_res = self.incident_engine.create_incident_ticket(target, severity, desc)
-                if isinstance(ticket_res, dict) and "ticket" in ticket_res:
-                    ticket_info = ticket_res.get("ticket", {})
-                    ticket_id = ticket_info.get("ticket_id")
-                    sla_target = ticket_info.get("sla_target", "1 Hour")
-                else:
-                    ticket_id = f"INC-{datetime.now().strftime('%Y%m%d')}-{hashlib.md5((target + str(datetime.now())).encode()).hexdigest()[:6].upper()}"
-                    sla_target = "1 Hour"
-                
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                soar_steps = None
-                if hasattr(self.incident_engine, "execute_soar_playbook"):
-                    try:
-                        soar_steps = self.incident_engine.execute_soar_playbook(ticket_id, target, severity, desc)
-                    except Exception:
-                        soar_steps = None
-                
-                if not soar_steps:
-                    soar_steps = [
-                        {"Phase": "1. Host Containment", "Action": f"Trigger micro-segmentation API to isolate asset '{target}'", "Status": "Completed", "Execution Time": timestamp},
-                        {"Phase": "2. Network Perimeter Defense", "Action": "Pushed dynamic DROP rule to edge firewall for malicious C2 IOCs", "Status": "Rule Enforced", "Execution Time": timestamp},
-                        {"Phase": "3. Forensic Preservation", "Action": f"Dispatched volatile memory dump and prefetch snapshot agent to '{target}'", "Status": "Artifacts Secured", "Execution Time": timestamp},
-                        {"Phase": "4. Automated Notification", "Action": f"Broadcasted {severity} incident alert to Tier-2 SOC & PagerDuty channels", "Status": "Dispatched", "Execution Time": timestamp}
-                    ]
-                
-                # Commit to CSV Ledger
-                audit_df = pd.DataFrame({
-                    "Timestamp": [timestamp],
-                    "Target": [target],
-                    "Notes": [f"[{severity}] Ticket: {ticket_id} - {desc}"],
-                    "Status": ["Quarantined / SOAR Active"]
-                })
-                file_name = "incident_reports.csv"
-                if os.path.exists(file_name):
-                    audit_df.to_csv(file_name, mode='a', header=False, index=False)
-                else:
-                    audit_df.to_csv(file_name, index=False)
-                
-                st.success("🎯 Incident Registered & Defensive SOAR Pipeline Initialized! (Committed to SIEM Ledger)")
-                c1, c2, c3 = st.columns(3)
-                c1.metric("Generated Ticket ID", ticket_id)
-                c2.metric("Incident Severity", severity)
-                c3.metric("Response SLA Target", sla_target)
-                
-                st.markdown("---")
-                st.markdown("### 🤖 Automated SOAR Playbook Execution Matrix")
-                st.dataframe(pd.DataFrame(soar_steps), use_container_width=True, hide_index=True)
+        st.title("⚡ Automated SOAR Playbooks & Ticketing")
+        st.markdown("Generate incident tickets, assign SLAs, and trigger automated response playbooks.")
+        target = st.text_input("Compromised Asset / Host ID:", placeholder="e.g., WORKSTATION-04")
+        severity = st.selectbox("Threat Severity", ["LOW", "MEDIUM", "HIGH", "CRITICAL"])
+        desc = st.text_area("Event Description / Findings:")
+        if st.button("Initialize Response Ticket"):
+            if target:
+                res = self.incident_engine.create_incident_ticket(target, severity, desc)
+                st.success(res.get("status", "Ticket generated successfully."))
+                st.json(res.get("ticket", {}))
             else:
-                st.warning("Please provide both target asset ID and event description.")
+                st.warning("Please specify a target asset.")
 
     def run_vulnerability_management(self):
-        st.title("📊 Vulnerability & CVSS v3.1 Risk Assessment")
-        st.markdown("Document discovered vulnerabilities, paste security advisories, and calculate official CVSS v3.1 impact matrices.")
-
-        # --- 1. Target Vulnerability Input Fields (Empty for manual pasting) ---
-        st.markdown("### 🎯 Vulnerability Target & Scope")
-        col_v1, col_v2 = st.columns([1, 1])
-        with col_v1:
-            target_asset = st.text_input("Target Asset / Component (Host, URL, or Service):", placeholder="e.g., https://api.bank.com/auth or Apache HTTPD 2.4")
-        with col_v2:
-            cve_id = st.text_input("Vulnerability Title / CVE Identifier:", placeholder="e.g., CVE-2026-2184 Unauthenticated RCE")
-
-        vuln_desc = st.text_area("Vulnerability Description & Proof-of-Concept (POC) Notes:", 
-                                 placeholder="Paste raw vulnerability advisory, scanner findings, or exploit mechanics here...", 
-                                 height=100)
-
-        st.markdown("---")
-        # --- 2. Exploitability & CIA Triad Matrices ---
-        st.markdown("### ⚙️ Attack Vector & Exploitability Parameters")
-        c1, c2, c3, c4 = st.columns(4)
-        with c1:
-            av = st.selectbox("Attack Vector (AV)", ["Network (AV:N)", "Adjacent (AV:A)", "Local (AV:L)", "Physical (AV:P)"])
-        with c2:
-            ac = st.selectbox("Attack Complexity (AC)", ["Low (AC:L)", "High (AC:H)"])
-        with c3:
-            pr = st.selectbox("Privileges Required (PR)", ["None (PR:N)", "Low (PR:L)", "High (PR:H)"])
-        with c4:
-            ui = st.selectbox("User Interaction (UI)", ["None (UI:N)", "Required (UI:R)"])
-
-        st.markdown("### 🛡️ Scope & Impact Parameters (CIA Triad)")
-        c5, c6, c7, c8 = st.columns(4)
-        with c5:
-            scope = st.selectbox("Scope (S)", ["Unchanged (S:U)", "Changed (S:C)"])
-        with c6:
-            conf = st.selectbox("Confidentiality (C)", ["High (H)", "Low (L)", "None (N)"])
-        with c7:
-            integ = st.selectbox("Integrity (I)", ["High (H)", "Low (L)", "None (N)"])
-        with c8:
-            avail = st.selectbox("Availability (A)", ["High (H)", "Low (L)", "None (N)"])
-
-        st.markdown("---")
-        if st.button("Calculate Vector Risk & Generate SLA Directive"):
-            if target_asset and cve_id:
-                if hasattr(self.vuln_mgr, "calculate_cvss_score"):
-                    try:
-                        res = self.vuln_mgr.calculate_cvss_score(av, ac, pr, ui, scope, conf, integ, avail)
-                    except Exception:
-                        res = {"base_score": 7.5, "severity": "HIGH", "sla": "Remediate within 7 to 14 Days", "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N", "exploitability_score": 3.9, "impact_score": 3.6}
-                else:
-                    res = {"base_score": 7.5, "severity": "HIGH", "sla": "Remediate within 7 to 14 Days", "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N", "exploitability_score": 3.9, "impact_score": 3.6}
-
-                st.success(f"🎯 Vulnerability Risk Assessment Completed for `{target_asset}`!")
-                
-                # Primary Metrics
-                m1, m2, m3 = st.columns(3)
-                m1.metric("Calculated Base Score", f"{res['base_score']} / 10.0")
-                m2.metric("Severity Rating", res["severity"])
-                m3.metric("Exploitability vs Impact", f"{res['exploitability_score']} | {res['impact_score']}")
-
-                st.markdown("---")
-                st.markdown("### 📋 Remediation Directive & Audit Record")
-                
-                summary_table = [
-                    {"Attribute": "Target Asset", "Details": target_asset},
-                    {"Attribute": "Vulnerability Title / CVE", "Details": cve_id},
-                    {"Attribute": "CVSS v3.1 Vector String", "Details": f"`{res['vector_string']}`"},
-                    {"Attribute": "Remediation SLA Window", "Details": res["sla"]},
-                    {"Attribute": "Description / Scope", "Details": vuln_desc if vuln_desc else "Standard vulnerability assessment logged."}
-                ]
-                st.dataframe(pd.DataFrame(summary_table), use_container_width=True, hide_index=True)
-                st.info(f"💡 Recommendation: Assign `{cve_id}` to your engineering team under SLA `{res['sla']}`.")
-            else:
-                st.warning("⚠️ Please provide at least the Target Asset and Vulnerability Title / CVE before calculating.")
+        st.title("📊 Vulnerability & CVSS Assessment")
+        st.markdown("Calculate Common Vulnerability Scoring System (CVSS v3.1) metrics and remediation SLAs.")
+        score = st.slider("Select CVSS Base Score:", 0.0, 10.0, 7.5, 0.1)
+        if st.button("Calculate Vector Risk"):
+            assessment = self.vuln_mgr.calculate_cvss_score(score)
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Base CVSS Score", f"{score}/10.0")
+            c2.metric("Severity Rating", assessment.get("severity", "HIGH"))
+            c3.metric("Remediation SLA", assessment.get("sla", "7-14 Days"))
+            st.code(assessment.get("vector_string", "CVSS:3.1/..."), language="text")
 
     def run_threat_analyzer(self):
-        st.title("🔬 Web Application Threat & Payload Analyzer")
-        st.markdown("Deep inspection of HTTP parameters, web payloads, and OWASP Top 10 attack vectors (SQLi, XSS, RCE, SSRF, Traversal).")
-
-        payload = st.text_input("Input Parameter / URI String / HTTP Payload:", placeholder="Paste HTTP payload (e.g., admin' UNION SELECT null, username, password FROM users--)...")
-        
-        if st.button("Execute Deep Payload Inspection"):
+        st.title("🔬 Web Application Threat Analyzer")
+        st.markdown("Inspect URL query parameters and payload strings for SQLi and XSS attack signatures.")
+        payload = st.text_input("Input Parameter String:", placeholder="e.g., ?id=1' OR '1'='1 or <script>alert(1)</script>")
+        if st.button("Scan Parameter"):
             if payload:
-                with st.spinner("Analyzing web parameter against OWASP attack signatures..."):
-                    if hasattr(self.analyzer, "analyze_web_payload"):
-                        res = self.analyzer.analyze_web_payload(payload)
-                    else:
-                        res = {"overall_threat": "SUSPICIOUS THREAT", "risk_score": 75, "detections_count": 1, "detections": []}
-
-                    if "error" in res:
-                        st.error(res["error"])
-                    else:
-                        st.success("Web Threat Inspection Complete!")
-                        
-                        c1, c2, c3 = st.columns(3)
-                        c1.metric("Overall Posture", res.get("overall_threat", "UNKNOWN"))
-                        c2.metric("Heuristic Risk Score", f"{res.get('risk_score', 0)} / 100")
-                        c3.metric("Attack Vectors Triggered", res.get("detections_count", 0))
-
-                        st.markdown("---")
-                        st.markdown("### 🛡️ Detected OWASP Vulnerability Signatures")
-                        
-                        detections = res.get("detections", [])
-                        if detections:
-                            st.dataframe(pd.DataFrame(detections), use_container_width=True, hide_index=True)
-                            st.info("💡 Remediation Mandate: Implement strict parameterized queries, Context-Aware Output Encoding (XSS filter), and WAF rate-limiting.")
-                        else:
-                            st.success("🟢 Clean Parameter: No malicious SQLi, XSS, RCE, SSRF or Path Traversal signatures detected.")
+                st.write("**SQL Injection Analysis:**", self.analyzer.detect_sql_injection(payload))
+                st.write("**XSS Signature Analysis:**", self.analyzer.detect_xss(payload))
             else:
-                st.warning("Please provide a parameter string to analyze.")
+                st.warning("Please input a parameter string.")
 
     def run_incident_defense(self):
-        st.title("📝 Live Incident Defense & Evidence Ledger")
-        st.markdown("Record compromised assets, triage forensic evidence, and commit findings to the SIEM incident ledger.")
-
-        scam_target = st.text_input("Compromised / Malicious Asset:", placeholder="e.g., 198.51.100.25 / evil-c2.example.com")
-        evidence_notes = st.text_area("Forensic Investigation Notes:", placeholder="Document forensic analysis details, egress IPs, or mitigation steps taken...", height=110)
+        st.title("📝 Incident Defense & Evidence Ledger")
+        st.markdown("Record threat intelligence notes and commit forensic evidence to the immutable local audit trail.")
+        scam_target = st.text_input("Compromised / Malicious Asset:", placeholder="e.g., 192.168.1.100 or malware.exe")
+        evidence_notes = st.text_area("Forensic Evidence & Containment Notes:")
         
         if st.button("Commit to Immutable Ledger"):
-            if scam_target and evidence_notes:
+            if scam_target:
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                record_id = f"LEDGER-{datetime.now().strftime('%Y%m%d')}-{hashlib.md5((scam_target + timestamp).encode()).hexdigest()[:6].upper()}"
-                
-                audit_df = pd.DataFrame({
-                    "Timestamp": [timestamp],
-                    "Target": [scam_target],
-                    "Notes": [f"[{record_id}] {evidence_notes}"],
-                    "Status": ["Verified & Quarantined"]
-                })
+                audit_df = pd.DataFrame({"Timestamp": [timestamp], "Target": [scam_target], "Notes": [evidence_notes], "Status": ["Secured & Logged"]})
                 
                 file_name = "incident_reports.csv"
                 if os.path.exists(file_name):
@@ -755,27 +581,9 @@ class SOCDashboardUI:
                 else:
                     audit_df.to_csv(file_name, index=False)
                     
-                st.success("✅ Evidence secured and successfully committed to the immutable SIEM Ledger database!")
-                
-                # Detailed Ledger Metrics & Matrix
-                m1, m2, m3 = st.columns(3)
-                m1.metric("Ledger Entry ID", record_id)
-                m2.metric("Target Asset", scam_target)
-                m3.metric("Integrity Status", "Secured (SHA-256 Verified)")
-                
-                st.markdown("---")
-                st.markdown("### 📋 Committed Forensic Evidence Record")
-                
-                evidence_summary = [
-                    {"Field": "Ledger ID", "Record Value": record_id},
-                    {"Field": "Timestamp", "Record Value": timestamp},
-                    {"Field": "Target Indicator", "Record Value": scam_target},
-                    {"Field": "Forensic Scope", "Record Value": evidence_notes},
-                    {"Field": "Storage Status", "Record Value": "Committed to incident_reports.csv"}
-                ]
-                st.dataframe(pd.DataFrame(evidence_summary), use_container_width=True, hide_index=True)
+                st.success("Evidence securely committed to local SIEM database ledger.")
             else:
-                st.warning("Please provide both the malicious asset and investigation notes before committing.")
+                st.warning("Please specify a compromised asset.")
 
 
 # ==========================================
