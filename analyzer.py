@@ -1,4 +1,4 @@
-i# analyzer.py - Enterprise Web Application Threat & Payload Analyzer
+# analyzer.py - Enterprise Web Application Threat & Payload Analyzer
 
 import hashlib
 import json
