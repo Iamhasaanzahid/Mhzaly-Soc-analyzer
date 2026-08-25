@@ -66,7 +66,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Defense Platform"
-        self.version = "15.0 Elite Production"
+        self.version = "16.0 Elite Production"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -261,39 +261,57 @@ class SOCDashboardUI:
 
     def run_otx_threat_feed(self):
         st.title("🛰️ AlienVault OTX Threat Intelligence Feed")
-        st.markdown("Query global open-source threat intelligence telemetry and community campaigns.")
+        st.markdown("Query global open-source threat intelligence telemetry and community threat campaigns.")
         
         col1, col2 = st.columns([1, 2])
         with col1:
             indicator_type = st.selectbox("Select Indicator Type", ["IP", "Domain"])
         with col2:
-            query_target = st.text_input("Enter Indicator (e.g., 1.1.1.1):")
+            query_target = st.text_input("Enter Indicator (e.g., 8.8.8.8 or example.com):")
             
         if st.button("Query OTX Telemetry"):
             if query_target:
-                with st.spinner("Fetching threat intelligence data..."):
+                with st.spinner("Fetching global threat telemetry from OTX..."):
                     res = self.otx_processor.check_indicator(indicator_type, query_target)
                     if "error" in res:
                         st.error(res["error"])
                     else:
-                        st.success("OTX Telemetry Received Successfully!")
+                        st.success("OTX Intelligence Telemetry Retrieved Successfully!")
                         pulse_count = res.get("threat_pulse_count", 0)
                         
-                        if pulse_count > 0:
-                            st.error(f"🚨 Threat Alert: This indicator appears in {pulse_count} active security pulses worldwide!")
-                        else:
-                            st.success("🟢 Clean: No active threat pulses found in public OTX database.")
-                            
-                        st.write(f"**Target Analyzed:** {res.get('query')}")
-                        st.write(f"**Total Threat Pulses:** {pulse_count}")
+                        # High-level metrics display
+                        c1, c2, c3 = st.columns(3)
+                        c1.metric("Active Threat Pulses", pulse_count)
+                        c2.metric("Hosting Country", res.get("country", "N/A"))
+                        c3.metric("Network ASN", res.get("asn", "N/A"))
                         
+                        st.markdown("---")
+                        if pulse_count > 0:
+                            st.error(f"🚨 Threat Alert: This indicator is linked to {pulse_count} active security campaigns worldwide!")
+                            
+                            # Detailed Pulses Table
+                            st.markdown("### 📋 Associated Threat Campaigns (Pulses)")
+                            detailed_pulses = res.get("detailed_pulses", [])
+                            if detailed_pulses:
+                                df_pulses = pd.DataFrame(detailed_pulses)
+                                st.dataframe(df_pulses, use_container_width=True, hide_index=True)
+                        else:
+                            st.success("🟢 Clean Posture: No malicious threat campaigns or threat actor pulses recorded in OTX database.")
+                            
+                        # Additional Details & Malware Families
+                        malware_families = res.get("malware_families", [])
+                        if malware_families:
+                            st.markdown("### 🦠 Associated Malware Families:")
+                            st.write(", ".join(malware_families))
+
+                        # References section
                         references = res.get("references", [])
                         if references:
-                            st.markdown("### 🔍 Associated Threat References:")
+                            st.markdown("### 🔍 Investigation References & IOC Sources:")
                             for ref in references[:5]:
                                 st.markdown(f"- [{ref}]({ref})")
             else:
-                st.warning("Please enter a target to query.")
+                st.warning("Please enter a target indicator to query.")
 
     def run_blue_team_log_analyzer(self):
         st.title("🛡️ SIEM & Log Anomaly Detector")
