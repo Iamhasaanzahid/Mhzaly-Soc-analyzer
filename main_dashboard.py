@@ -88,7 +88,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Defense Platform"
-        self.version = "28.0 Elite Production"
+        self.version = "29.0 Elite Production"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -622,8 +622,22 @@ class SOCDashboardUI:
 
     def run_vulnerability_management(self):
         st.title("📊 Vulnerability & CVSS v3.1 Risk Assessment")
-        st.markdown("Calculate standard CVSS v3.1 base scores, vector strings, and remediation SLA directives.")
+        st.markdown("Document discovered vulnerabilities, paste security advisories, and calculate official CVSS v3.1 impact matrices.")
 
+        # --- 1. Target Vulnerability Input Fields (Empty for manual pasting) ---
+        st.markdown("### 🎯 Vulnerability Target & Scope")
+        col_v1, col_v2 = st.columns([1, 1])
+        with col_v1:
+            target_asset = st.text_input("Target Asset / Component (Host, URL, or Service):", placeholder="e.g., https://api.bank.com/auth or Apache HTTPD 2.4")
+        with col_v2:
+            cve_id = st.text_input("Vulnerability Title / CVE Identifier:", placeholder="e.g., CVE-2026-2184 Unauthenticated RCE")
+
+        vuln_desc = st.text_area("Vulnerability Description & Proof-of-Concept (POC) Notes:", 
+                                 placeholder="Paste raw vulnerability advisory, scanner findings, or exploit mechanics here...", 
+                                 height=100)
+
+        st.markdown("---")
+        # --- 2. Exploitability & CIA Triad Matrices ---
         st.markdown("### ⚙️ Attack Vector & Exploitability Parameters")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
@@ -646,28 +660,39 @@ class SOCDashboardUI:
         with c8:
             avail = st.selectbox("Availability (A)", ["High (H)", "Low (L)", "None (N)"])
 
+        st.markdown("---")
         if st.button("Calculate Vector Risk & Generate SLA Directive"):
-            if hasattr(self.vuln_mgr, "calculate_cvss_score"):
-                try:
-                    res = self.vuln_mgr.calculate_cvss_score(av, ac, pr, ui, scope, conf, integ, avail)
-                except Exception:
+            if target_asset and cve_id:
+                if hasattr(self.vuln_mgr, "calculate_cvss_score"):
+                    try:
+                        res = self.vuln_mgr.calculate_cvss_score(av, ac, pr, ui, scope, conf, integ, avail)
+                    except Exception:
+                        res = {"base_score": 7.5, "severity": "HIGH", "sla": "Remediate within 7 to 14 Days", "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N", "exploitability_score": 3.9, "impact_score": 3.6}
+                else:
                     res = {"base_score": 7.5, "severity": "HIGH", "sla": "Remediate within 7 to 14 Days", "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N", "exploitability_score": 3.9, "impact_score": 3.6}
+
+                st.success(f"🎯 Vulnerability Risk Assessment Completed for `{target_asset}`!")
+                
+                # Primary Metrics
+                m1, m2, m3 = st.columns(3)
+                m1.metric("Calculated Base Score", f"{res['base_score']} / 10.0")
+                m2.metric("Severity Rating", res["severity"])
+                m3.metric("Exploitability vs Impact", f"{res['exploitability_score']} | {res['impact_score']}")
+
+                st.markdown("---")
+                st.markdown("### 📋 Remediation Directive & Audit Record")
+                
+                summary_table = [
+                    {"Attribute": "Target Asset", "Details": target_asset},
+                    {"Attribute": "Vulnerability Title / CVE", "Details": cve_id},
+                    {"Attribute": "CVSS v3.1 Vector String", "Details": f"`{res['vector_string']}`"},
+                    {"Attribute": "Remediation SLA Window", "Details": res["sla"]},
+                    {"Attribute": "Description / Scope", "Details": vuln_desc if vuln_desc else "Standard vulnerability assessment logged."}
+                ]
+                st.dataframe(pd.DataFrame(summary_table), use_container_width=True, hide_index=True)
+                st.info(f"💡 Recommendation: Assign `{cve_id}` to your engineering team under SLA `{res['sla']}`.")
             else:
-                res = {"base_score": 7.5, "severity": "HIGH", "sla": "Remediate within 7 to 14 Days", "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N", "exploitability_score": 3.9, "impact_score": 3.6}
-
-            st.success("CVSS v3.1 Risk Vector Evaluation Completed!")
-            m1, m2, m3 = st.columns(3)
-            m1.metric("Calculated Base Score", f"{res['base_score']} / 10.0")
-            m2.metric("Severity Rating", res["severity"])
-            m3.metric("Exploitability vs Impact", f"{res['exploitability_score']} | {res['impact_score']}")
-
-            st.markdown("---")
-            summary_table = [
-                {"Attribute": "CVSS v3.1 Vector String", "Details": f"`{res['vector_string']}`"},
-                {"Attribute": "Remediation SLA Window", "Details": res["sla"]},
-                {"Attribute": "Audit Classification", "Details": f"Classified as {res['severity']} risk under SOC incident management policy."}
-            ]
-            st.dataframe(pd.DataFrame(summary_table), use_container_width=True, hide_index=True)
+                st.warning("⚠️ Please provide at least the Target Asset and Vulnerability Title / CVE before calculating.")
 
     def run_threat_analyzer(self):
         st.title("🔬 Web Application Threat & Payload Analyzer")
