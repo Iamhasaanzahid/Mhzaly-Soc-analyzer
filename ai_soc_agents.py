@@ -1,11 +1,19 @@
 import os
 from crewai import Agent, Task, Crew, Process
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-# Direct Gemini API Key setup (No external file dependency)
+# Direct Gemini API Key setup
 API_KEY = "AQ.Ab8RN6KixkLrHNZPohMZxmaxJfR9h2cGG9Pf1vC1HTCRU4Iz4w"
 
 os.environ["GOOGLE_API_KEY"] = API_KEY
 os.environ["GEMINI_API_KEY"] = API_KEY
+
+# Direct LangChain LLM instance banana taaki authentication ka masla na aaye
+llm_model = ChatGoogleGenerativeAI(
+    model="gemini-1.5-pro",
+    google_api_key=API_KEY,
+    temperature=0.3
+)
 
 def run_autonomous_soc_analysis(logs_data):
     
@@ -15,7 +23,7 @@ def run_autonomous_soc_analysis(logs_data):
         backstory='Aap ek expert SOC analyst hain. Aapka kaam network logs, web traffic, aur server logs mein chhupe hue attacks ko pakarna hai.',
         verbose=True,
         allow_delegation=False,
-        llm='gemini/gemini-1.5-pro'
+        llm=llm_model
     )
 
     incident_responder = Agent(
@@ -24,7 +32,7 @@ def run_autonomous_soc_analysis(logs_data):
         backstory='Aap ek action-oriented security expert hain. Jab attack pakra jata hai, toh aap block list aur firewall rules update karne ka plan banate hain.',
         verbose=True,
         allow_delegation=False,
-        llm='gemini/gemini-1.5-pro'
+        llm=llm_model
     )
 
     soc_manager = Agent(
@@ -33,7 +41,7 @@ def run_autonomous_soc_analysis(logs_data):
         backstory='Aap MHZALY SOC team ke head hain. Aap technical baaton ko aasan aur professional language mein convert karke final report banate hain.',
         verbose=True,
         allow_delegation=True,
-        llm='gemini/gemini-1.5-pro'
+        llm=llm_model
     )
 
     analyze_task = Task(
