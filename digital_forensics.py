@@ -1,3 +1,5 @@
+# digital_forensics.py - Advanced Digital Forensics & Log Artifact Extraction Engine
+
 import hashlib
 import os
 from datetime import datetime
@@ -9,6 +11,16 @@ class DigitalForensicsAnalyzer:
         self.evidence_vault = {}
         self.chain_of_custody = []
         self.timeline_events = []
+        
+        # Comprehensive regex patterns for full forensic artifact extraction
+        self.patterns = {
+            "IPv4 Address": r"\b(?:\d{1,3}\.){3}\d{1,3}\b",
+            "Email Address": r"\b[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+\b",
+            "MD5 Hash": r"\b[a-fA-F0-9]{32}\b",
+            "SHA256 Hash": r"\b[a-fA-F0-9]{64}\b",
+            "C2 / Web URL": r"https?://[^\s\"'>]+",
+            "Windows File Path": r"[A-Za-z]:\\(?:[A-Za-z0-9_\-\s]+\\)*[A-Za-z0-9_\-\.]+"
+        }
 
     # --- 1. Evidence Handling & Chain of Custody ---
     def acquire_evidence(self, evidence_id, source, description):
@@ -49,19 +61,27 @@ class DigitalForensicsAnalyzer:
         self.chain_of_custody.append(entry)
         return {"status": f"Chain of custody updated for {evidence_id} by {handler_name}."}
 
-    # --- 2. Text & Log Artifact Parsing (Real Analysis) ---
+    # --- 2. Text & Log Artifact Parsing (Deep Multi-Category Extraction) ---
     def parse_text_artifacts(self, raw_text):
-        """ٹیکسٹ یا لاگ کے اندر سے آئی پی، ای میل اور لنکس نکالتا ہے"""
-        ip_pattern = r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b'
-        email_pattern = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
-        
-        ips = list(set(re.findall(ip_pattern, raw_text)))
-        emails = list(set(re.findall(email_pattern, raw_text)))
-        
+        """ٹیکسٹ یا لاگ کے اندر سے آئی پی، ای میل، ہیشز، یو آر ایل اور فائل پاتھس نکالتا ہے"""
+        if not raw_text:
+            return {"error": "Empty log or dump content provided."}
+
+        artifacts = {}
+        total_extracted = 0
+
+        for name, pattern in self.patterns.items():
+            matches = list(set(re.findall(pattern, raw_text, re.IGNORECASE)))
+            artifacts[name] = matches
+            total_extracted += len(matches)
+
         return {
             "status": "Artifacts successfully extracted from text/logs.",
-            "ips": ips,
-            "emails": emails
+            "total_artifacts": total_extracted,
+            "artifacts": artifacts,
+            # Backward compatibility keys for older dashboard calls
+            "ips": artifacts.get("IPv4 Address", []),
+            "emails": artifacts.get("Email Address", [])
         }
 
     # --- 3. Stubs for Advanced Forensics ---
