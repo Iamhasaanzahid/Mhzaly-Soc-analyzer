@@ -67,7 +67,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Defense Platform"
-        self.version = "21.0 Elite Production"
+        self.version = "22.0 Elite Production"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -532,11 +532,50 @@ class SOCDashboardUI:
 
     def run_digital_forensics(self):
         st.title("🔎 Digital Forensics & Log Artifact Extraction")
-        logs_input = st.text_area("Input Raw Logs / Hex Dump:")
+        st.markdown("Extract forensic artifacts, cryptographic hashes, network indicators, and system paths from raw dumps.")
+        
+        logs_input = st.text_area("Input Raw Logs / Hex Dump / Memory Strings:", height=140)
         if st.button("Extract Artifacts"):
             if logs_input:
-                res = self.forensics.parse_text_artifacts(logs_input)
-                st.json(res)
+                with st.spinner("Parsing memory dump and extracting forensic indicators..."):
+                    res = self.forensics.parse_text_artifacts(logs_input)
+                    if "error" in res:
+                        st.error(res["error"])
+                    else:
+                        st.success("Artifact Extraction Protocol Completed!")
+                        
+                        artifacts = res.get("artifacts", {})
+                        
+                        # High level metrics
+                        c1, c2, c3, c4 = st.columns(4)
+                        c1.metric("IPs Extracted", len(artifacts.get("IPv4 Address", [])))
+                        c2.metric("Hashes (MD5/SHA256)", len(artifacts.get("MD5 Hash", [])) + len(artifacts.get("SHA256 Hash", [])))
+                        c3.metric("URLs & Endpoints", len(artifacts.get("C2 / Web URL", [])))
+                        c4.metric("File Paths", len(artifacts.get("Windows File Path", [])))
+                        
+                        st.markdown("---")
+                        st.markdown("### 📋 Extracted Forensic Evidence Matrix")
+                        
+                        table_rows = []
+                        for art_type, val_list in artifacts.items():
+                            for val in val_list:
+                                table_rows.append({
+                                    "Artifact Category": art_type,
+                                    "Extracted Forensic Value": val
+                                })
+                                
+                        if table_rows:
+                            df_forensics = pd.DataFrame(table_rows)
+                            
+                            category_filter = st.selectbox("Filter Artifact Type", ["All Artifacts"] + list(artifacts.keys()))
+                            if category_filter != "All Artifacts":
+                                df_forensics = df_forensics[df_forensics["Artifact Category"] == category_filter]
+                                
+                            st.dataframe(df_forensics, use_container_width=True, hide_index=True)
+                        else:
+                            st.info("No standard forensic patterns detected in the raw input.")
+            else:
+                st.warning("Please paste log or memory dump text to parse.")
 
     def run_incident_response(self):
         st.title("⚡ Incident Response & SOAR Playbooks")
