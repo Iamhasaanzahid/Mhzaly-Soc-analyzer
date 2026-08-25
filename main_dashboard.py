@@ -5,6 +5,7 @@ import pandas as pd
 import os
 import hashlib
 import re
+import urllib.parse
 from datetime import datetime
 
 # --- Safe Backend Modules Import (Fallback mechanism) ---
@@ -66,7 +67,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Defense Platform"
-        self.version = "18.0 Elite Production"
+        self.version = "20.0 Elite Production"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -247,7 +248,6 @@ class SOCDashboardUI:
                                 })
                             
                             df_vendors = pd.DataFrame(vendor_data)
-                            
                             filter_choice = st.selectbox("Filter Results by Status", ["All Engines", "Malicious / Suspicious Only", "Harmless Only"])
                             
                             if filter_choice == "Malicious / Suspicious Only":
@@ -359,7 +359,6 @@ class SOCDashboardUI:
                     
                     if anomaly_records:
                         df_logs = pd.DataFrame(anomaly_records)
-                        
                         log_filter = st.selectbox("Filter Log Events", ["All Events", "Malicious / Failed Only", "Successful Sessions Only"])
                         
                         if log_filter == "Malicious / Failed Only":
@@ -398,7 +397,6 @@ class SOCDashboardUI:
                         findings = scan_res.get('findings', [])
                         if findings:
                             df_findings = pd.DataFrame(findings)
-                            
                             risk_filter = st.selectbox("Filter Findings by Risk Level", ["All Findings", "High & Medium Risks Only", "Secure / Low Only"])
                             
                             if risk_filter == "High & Medium Risks Only":
@@ -414,15 +412,62 @@ class SOCDashboardUI:
                 st.warning("Please enter a target domain.")
 
     def run_osint_dorks(self):
-        st.title("🌐 OSINT & Reconnaissance Utility")
+        st.title("🌐 OSINT & Google Dork Reconnaissance Utility")
+        st.markdown("Automate open-source intelligence footprinting and defensive reconnaissance queries for target assets.")
+
         dork_categories = {
-            "01. Sensitive Files & Credentials": [("Log Files with Passwords", 'site:target.com intext:"password" filetype:log')]
+            "01. Sensitive Files & Credentials": [
+                ("Database Dumps & Backups", 'site:target.com (filetype:sql OR filetype:bak OR filetype:dump)', "Critical"),
+                ("Private Keys & Environment Configs", 'site:target.com (ext:pem OR ext:key OR ext:env OR inurl:config)', "Critical"),
+                ("Exposed Log Files with Passwords", 'site:target.com intext:"password" filetype:log', "High")
+            ],
+            "02. Cloud Infrastructure & DevOps": [
+                ("Public S3 Buckets", 'site:s3.amazonaws.com "target.com"', "High"),
+                ("CI/CD Automation Pipelines", 'site:target.com (inurl:jenkins OR inurl:gitlab-ci)', "Medium"),
+                ("Container Dashboards & Telemetry", 'site:target.com (inurl:kubernetes OR inurl:grafana)', "High")
+            ],
+            "03. Modern SaaS & API Endpoints": [
+                ("Swagger / API Documentation", 'site:target.com (inurl:swagger OR inurl:api-docs)', "Medium"),
+                ("Admin Portals & SSO Endpoints", 'site:target.com (inurl:admin OR inurl:auth/login)', "Medium"),
+                ("GraphQL Endpoints", 'site:target.com inurl:graphql', "Low")
+            ],
+            "04. AI & ML Infrastructure": [
+                ("Exposed OpenAI/API Tokens in Notebooks", 'site:target.com filetype:ipynb "OPENAI_API_KEY"', "Critical"),
+                ("Vector Databases & MLflow Tracking", 'site:target.com (inurl:mlflow OR inurl:chroma)', "Medium")
+            ]
         }
-        selected_category = st.selectbox("Select Target Vector", list(dork_categories.keys()))
-        target_domain = st.text_input("Enter Target Domain:", "example.com")
-        for name, query_template in dork_categories[selected_category]:
-            final_query = query_template.replace("target.com", target_domain)
-            st.code(final_query, language="text")
+
+        target_domain = st.text_input("Enter Target Domain (e.g., example.com):", "google.com")
+        clean_domain = target_domain.replace("https://", "").replace("http://", "").strip("/").split("/")[0]
+
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            selected_category = st.selectbox("Select Reconnaissance Category", list(dork_categories.keys()))
+        with col2:
+            st.metric("Target Asset", clean_domain, "Domain Active")
+
+        st.markdown("---")
+        st.markdown(f"### 🎯 Active Query Set: {selected_category}")
+
+        recon_records = []
+        for name, query_template, risk in dork_categories[selected_category]:
+            final_query = query_template.replace("target.com", clean_domain)
+            encoded_query = urllib.parse.quote(final_query)
+            search_url = f"https://www.google.com/search?q={encoded_query}"
+            
+            recon_records.append({
+                "Vector Objective": name,
+                "Risk Rating": risk,
+                "Google Dork Payload": final_query,
+                "Launch URL": search_url
+            })
+
+        df_recon = pd.DataFrame(recon_records)
+        st.dataframe(df_recon[["Vector Objective", "Risk Rating", "Google Dork Payload"]], use_container_width=True, hide_index=True)
+
+        st.markdown("### 🚀 Live Search Actions")
+        for item in recon_records:
+            st.markdown(f"- **{item['Vector Objective']}** (`{item['Risk Rating']}`): [Launch Query on Search Engine ↗]({item['Launch URL']})")
 
     def run_crypto_analyzer(self):
         st.title("🔐 Cryptographic Hash & Password Strength Analyzer")
