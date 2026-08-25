@@ -185,7 +185,6 @@ class SOCDashboardUI:
         st.markdown("---")
         st.markdown("### 📡 Live Incident Event Log (Real-Time Database)")
         
-        # Connect to real incident database (incident_reports.csv)
         file_name = "incident_reports.csv"
         if os.path.exists(file_name):
             try:
@@ -383,37 +382,30 @@ class SOCDashboardUI:
                 st.metric(label="Calculated Base Score", value=f"{score}/10.0")
             
             with col2:
-                # Detail Logic added here based on official CVSS scales
                 if score == 0.0:
                     severity = "None"
-                    color = "grey"
                     recommendation = "No immediate action required. Monitor for baseline changes."
                     st.info(f"**Severity Level:** {severity}")
                 elif 0.1 <= score <= 3.9:
                     severity = "Low"
-                    color = "green"
                     recommendation = "Add to routine patch management schedule. Low risk of exploitation."
                     st.success(f"**Severity Level:** {severity} 🟢")
                 elif 4.0 <= score <= 6.9:
                     severity = "Medium"
-                    color = "yellow"
                     recommendation = "Schedule patching during next maintenance window. Apply compensating controls if possible."
                     st.warning(f"**Severity Level:** {severity} 🟡")
                 elif 7.0 <= score <= 8.9:
                     severity = "High"
-                    color = "orange"
                     recommendation = "Prioritize patching immediately. Restrict access to affected components."
                     st.error(f"**Severity Level:** {severity} 🟠")
                 elif 9.0 <= score <= 10.0:
                     severity = "Critical"
-                    color = "red"
                     recommendation = "URGENT ACTION REQUIRED. Isolate affected systems and apply emergency patches immediately."
                     st.error(f"**Severity Level:** {severity} 🔴")
                     
             st.markdown("#### ⚙️ SOC Analyst Recommendation:")
             st.markdown(f"> {recommendation}")
             
-            # Fallback for the backend module in case it has its own logic
             backend_res = self.vuln_mgr.calculate_cvss_score(score)
             if "status" not in backend_res or backend_res["status"] != "Module missing":
                  with st.expander("View Backend Engine Raw Output"):
@@ -449,4 +441,38 @@ class SOCDashboardUI:
                     audit_df.to_csv(file_name, index=False)
                     
                 st.success("Evidence secured in local database.")
-                if os.path.exis
+                if os.path.exists(file_name):
+                    st.info("Log database updated successfully.")
+
+
+# ==========================================
+# MAIN EXECUTION ROUTING (Menu Controller)
+# ==========================================
+if __name__ == "__main__":
+    app = SOCDashboardUI()
+    app.setup_page_config()
+    
+    choice = app.render_sidebar()
+    
+    if choice == "Overview & Dashboard":
+        app.run_overview()
+    elif choice == "Global Threat Intel (VirusTotal)":
+        app.run_threat_intel()
+    elif choice == "Deep Bug Bounty & Vulnerability Scanner":
+        app.run_bug_bounty_scanner()
+    elif choice == "OSINT & Google Dork Reconnaissance":
+        app.run_osint_dorks()
+    elif choice == "Crypto & Password Analyzer":
+        app.run_crypto_analyzer()
+    elif choice == "Threat Hunting & IOCs":
+        app.run_threat_hunting()
+    elif choice == "Digital Forensics & Logs":
+        app.run_digital_forensics()
+    elif choice == "Incident Response & SOAR":
+        app.run_incident_response()
+    elif choice == "Vulnerability Management":
+        app.run_vulnerability_management()
+    elif choice == "Threat Analyzer (SQLi/XSS)":
+        app.run_threat_analyzer()
+    elif choice == "Live Incident Defense & Reporting":
+        app.run_incident_defense()
