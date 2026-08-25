@@ -4,9 +4,10 @@ import uuid
 from datetime import datetime
 import requests
 import os
+import streamlit as st
 from dotenv import load_dotenv
 
-# Load secret keys from .env file
+# Load secret keys from local .env file (for local computer)
 load_dotenv()
 
 class ThreatIntelProcessor:
@@ -16,12 +17,25 @@ class ThreatIntelProcessor:
         self.ioc_database = {}
         self.threat_actors = {}
         self.osint_cache = {}
-        self.vt_api_key = os.getenv("VT_API_KEY") # Hidden API Key
+        
+        # Safe API Key retrieval (Supports both Local .env and Streamlit Cloud Secrets)
+        self.vt_api_key = self._get_vt_api_key()
+
+    def _get_vt_api_key(self):
+        # 1. Try fetching from Streamlit Cloud Secrets first (for live website)
+        try:
+            if hasattr(st, "secrets") and "VIRUSTOTAL_API_KEY" in st.secrets:
+                return st.secrets["VIRUSTOTAL_API_KEY"]
+        except Exception:
+            pass
+        
+        # 2. Fallback to local .env or environment variable (for local computer)
+        return os.getenv("VT_API_KEY")
 
     # --- REAL WORLD API SCANNER (VirusTotal Global Intel) ---
     def scan_target(self, target):
         if not self.vt_api_key or self.vt_api_key == "apni_virustotal_api_key_yahan_paste_karein":
-            return {"error": "API Key missing or invalid in .env file!"}
+            return {"error": "API Key missing or invalid! Please configure it in .env or Streamlit Secrets."}
         
         target = target.replace("https://", "").replace("http://", "").strip("/").split("/")[0]
         is_ip = re.match(r"^\d{1,3}(\.\d{1,3}){3}$", target)
@@ -35,7 +49,7 @@ class ThreatIntelProcessor:
                 data = response.json()
                 return data.get('data', {}).get('attributes', {})
             elif response.status_code == 401:
-                return {"error": "Invalid API Key. Please check your .env file."}
+                return {"error": "Invalid API Key. Please check your configuration."}
             else:
                 return {"error": f"Error {response.status_code}: Target not found or invalid."}
         except Exception as e:
