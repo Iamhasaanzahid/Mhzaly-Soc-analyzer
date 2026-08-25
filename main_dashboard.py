@@ -1,4 +1,4 @@
-# main_dashboard.py - MHZALY Enterprise SOC & Threat Hunting Platform (Updated with OTX Threat Feed)
+# main_dashboard.py - MHZALY Enterprise SOC & Threat Hunting Platform (Cyberpunk Hacker Edition)
 
 import streamlit as st
 import pandas as pd
@@ -66,7 +66,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Hunting Platform"
-        self.version = "9.5 Pro Ultimate"
+        self.version = "10.0 Hacker Edition"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -81,50 +81,97 @@ class SOCDashboardUI:
     def setup_page_config(self):
         st.set_page_config(page_title=self.app_name, layout="wide", page_icon="🛡️")
         
+        # ==========================================
+        # ADVANCED ETHICAL HACKER THEME & CRT CSS
+        # ==========================================
         st.markdown("""
         <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
         .stApp, [data-testid="stAppViewContainer"] {
-            background-color: #0d1117 !important;
-            color: #c9d1d9 !important;
-            font-family: 'Courier New', Courier, monospace !important;
+            background-color: #050505 !important;
+            color: #00ff66 !important;
+            font-family: 'Share Tech Mono', monospace !important;
         }
+        
+        /* CRT Screen Scanline Effect */
+        .stApp::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 99999;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
         [data-testid="stSidebar"] {
-            background-color: #161b22 !important;
-            border-right: 2px solid #00ff00 !important;
+            background-color: #080c0a !important;
+            border-right: 1px solid #00ff66 !important;
         }
         [data-testid="stSidebar"] div, [data-testid="stSidebar"] p, [data-testid="stSidebar"] label {
-            color: #c9d1d9 !important;
+            color: #00ff66 !important;
         }
+        
         .stTextInput>div>div>input, .stTextArea>div>div>textarea {
-            background-color: #0d1117 !important;
-            color: #00ff00 !important;
-            border: 1px solid #30363d !important;
+            background-color: #0a0f0d !important;
+            color: #00ff66 !important;
+            border: 1px solid #00ff66 !important;
+            border-radius: 0px !important;
+            box-shadow: inset 0 0 5px rgba(0,255,102,0.2);
         }
+        .stTextInput>div>div>input:focus, .stTextArea>div>div>textarea:focus {
+            border-color: #ffffff !important;
+            box-shadow: 0 0 10px #00ff66 !important;
+        }
+        
         .stButton>button {
-            background-color: transparent !important;
-            color: #00ff00 !important;
-            border: 1px solid #00ff00 !important;
-            border-radius: 5px !important;
+            background-color: #050505 !important;
+            color: #00ff66 !important;
+            border: 1px solid #00ff66 !important;
+            border-radius: 0px !important;
+            font-family: 'Share Tech Mono', monospace !important;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
         }
         .stButton>button:hover {
-            background-color: #00ff00 !important;
-            color: #0d1117 !important;
-            box-shadow: 0 0 10px #00ff00 !important;
+            background-color: #00ff66 !important;
+            color: #050505 !important;
+            box-shadow: 0 0 15px #00ff66 !important;
         }
-        h1, h2, h3, h4, h5, h6 { color: #58a6ff !important; }
-        [data-testid="stMetricValue"] { color: #00ff00 !important; font-weight: bold !important; }
-        [data-testid="stMetricLabel"] { color: #8b949e !important; }
-        p, span, div, li { color: #c9d1d9 ; }
+        
+        h1, h2, h3, h4, h5, h6 {
+            color: #00e5ff !important;
+            font-family: 'Share Tech Mono', monospace !important;
+            text-shadow: 0 0 5px rgba(0,229,255,0.4);
+        }
+        
+        [data-testid="stMetricValue"] {
+            color: #00ff66 !important;
+            text-shadow: 0 0 8px rgba(0,255,102,0.5);
+        }
+        [data-testid="stMetricLabel"] {
+            color: #8b949e !important;
+        }
+        
+        code, pre {
+            background-color: #0a0f0d !important;
+            color: #00ff66 !important;
+            border: 1px solid #00ff66 !important;
+        }
+
         .stAlert {
-            background-color: #161b22 !important;
-            border-left: 5px solid #00ff00 !important;
-            color: #c9d1d9 !important;
+            background-color: #0a0f0d !important;
+            border: 1px solid #00ff66 !important;
+            color: #00ff66 !important;
         }
         </style>
         """, unsafe_allow_html=True)
 
     def render_sidebar(self):
-        st.sidebar.markdown(f"<h2 style='color:#00ff00 !important; text-align:center;'>🛡️ SOC Command Center</h2>", unsafe_allow_html=True)
+        st.sidebar.markdown(f"<h2 style='color:#00ff66 !important; text-align:center;'>🛡️ SOC Command Center</h2>", unsafe_allow_html=True)
         st.sidebar.markdown(f"<p style='text-align:center; color:#8b949e !important;'>Version: {self.version}</p>", unsafe_allow_html=True)
         st.sidebar.markdown("---")
         return st.sidebar.radio("Navigation Menu", [
