@@ -1,4 +1,4 @@
-# main_dashboard.py - MHZALY Enterprise SOC & Threat Defense Platform (Professional Edition)
+# main_dashboard.py - MHZALY Enterprise SOC & Threat Defense Platform (Elite Edition)
 
 import streamlit as st
 import pandas as pd
@@ -66,7 +66,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Defense Platform"
-        self.version = "12.0 Enterprise Production"
+        self.version = "15.0 Elite Production"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -82,94 +82,95 @@ class SOCDashboardUI:
         st.set_page_config(page_title=self.app_name, layout="wide", page_icon="🛡️")
         
         # ==========================================
-        # MODERN ENTERPRISE SOC & DARK THEME CSS
+        # ELITE ENTERPRISE UI & CYBERPUNK/SOC CSS
         # ==========================================
         st.markdown("""
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
         .stApp, [data-testid="stAppViewContainer"] {
-            background-color: #0d1117 !important;
-            color: #c9d1d9 !important;
-            font-family: 'Inter', sans-serif !important;
+            background: linear-gradient(135deg, #030712 0%, #0f172a 100%) !important;
+            color: #f8fafc !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
         }
 
         [data-testid="stSidebar"] {
-            background-color: #161b22 !important;
-            border-right: 1px solid #30363d !important;
+            background-color: #0b0f19 !important;
+            border-right: 1px solid #1e293b !important;
         }
         [data-testid="stSidebar"] div, [data-testid="stSidebar"] p, [data-testid="stSidebar"] label, [data-testid="stSidebar"] span {
-            color: #c9d1d9 !important;
-            font-family: 'Inter', sans-serif !important;
+            color: #94a3b8 !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
         }
         
         .stTextInput>div>div>input, .stTextArea>div>div>textarea {
-            background-color: #0d1117 !important;
-            color: #58a6ff !important;
-            border: 1px solid #30363d !important;
-            border-radius: 6px !important;
+            background-color: #0f172a !important;
+            color: #38bdf8 !important;
+            border: 1px solid #334155 !important;
+            border-radius: 8px !important;
             font-family: 'JetBrains Mono', monospace !important;
         }
         .stTextInput>div>div>input:focus, .stTextArea>div>div>textarea:focus {
-            border-color: #58a6ff !important;
-            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3) !important;
+            border-color: #38bdf8 !important;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2) !important;
         }
         
         .stButton>button {
-            background-color: #21262d !important;
-            color: #c9d1d9 !important;
-            border: 1px solid #30363d !important;
-            border-radius: 6px !important;
-            font-family: 'Inter', sans-serif !important;
-            font-weight: 500;
-            transition: all 0.2s ease;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+            color: #f8fafc !important;
+            border: 1px solid #334155 !important;
+            border-radius: 8px !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
         .stButton>button:hover {
-            background-color: #30363d !important;
+            background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%) !important;
             color: #ffffff !important;
-            border-color: #8b949e !important;
+            border-color: #38bdf8 !important;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
         }
         
         h1, h2, h3, h4, h5, h6 {
-            color: #58a6ff !important;
-            font-family: 'Inter', sans-serif !important;
-            font-weight: 600 !important;
+            color: #38bdf8 !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+            font-weight: 700 !important;
         }
         
         [data-testid="stMetricValue"] {
-            color: #58a6ff !important;
+            color: #38bdf8 !important;
             font-family: 'JetBrains Mono', monospace !important;
         }
         [data-testid="stMetricLabel"] {
-            color: #8b949e !important;
+            color: #94a3b8 !important;
         }
         
         code, pre {
-            background-color: #161b22 !important;
-            color: #7ee787 !important;
-            border: 1px solid #30363d !important;
-            border-radius: 6px !important;
+            background-color: #0b0f19 !important;
+            color: #4ade80 !important;
+            border: 1px solid #1e293b !important;
+            border-radius: 8px !important;
             font-family: 'JetBrains Mono', monospace !important;
         }
 
         .stAlert {
-            background-color: #161b22 !important;
-            border: 1px solid #30363d !important;
-            color: #c9d1d9 !important;
-            border-radius: 6px !important;
+            background-color: #0f172a !important;
+            border: 1px solid #1e293b !important;
+            color: #f8fafc !important;
+            border-radius: 8px !important;
         }
         </style>
         """, unsafe_allow_html=True)
 
     def render_sidebar(self):
-        st.sidebar.markdown(f"<h3 style='color:#58a6ff !important; text-align:center;'>🛡️ Enterprise SOC</h3>", unsafe_allow_html=True)
-        st.sidebar.markdown(f"<p style='text-align:center; color:#8b949e !important; font-size:12px;'>Version: {self.version}</p>", unsafe_allow_html=True)
+        st.sidebar.markdown(f"<h3 style='color:#38bdf8 !important; text-align:center;'>🛡️ MHZALY SOC</h3>", unsafe_allow_html=True)
+        st.sidebar.markdown(f"<p style='text-align:center; color:#64748b !important; font-size:12px;'>Version: {self.version}</p>", unsafe_allow_html=True)
         st.sidebar.markdown("---")
         return st.sidebar.radio("Navigation Menu", [
             "Overview & Dashboard",
             "Global Threat Intel (VirusTotal)", 
             "AlienVault OTX Live Threat Feed", 
-            "SIEM & Log Anomaly Detector",         # Professional Blue Team Log Analysis
+            "SIEM & Log Anomaly Detector",         
             "Deep Bug Bounty & Vulnerability Scanner", 
             "OSINT & Google Dork Reconnaissance",  
             "Crypto & Password Analyzer",  
@@ -230,6 +231,33 @@ class SOCDashboardUI:
                         c1.error(f"🚨 Malicious: {stats.get('malicious', 0)}")
                         c2.warning(f"⚠️ Suspicious: {stats.get('suspicious', 0)}")
                         c3.success(f"✅ Harmless: {stats.get('harmless', 0)}")
+                        
+                        # --- Detailed Security Vendor Breakdown ---
+                        st.markdown("---")
+                        st.markdown("### 🔬 Detailed Security Vendor Engine Results")
+                        
+                        analysis_results = result.get('last_analysis_results', {})
+                        if analysis_results:
+                            vendor_data = []
+                            for engine, details in analysis_results.items():
+                                vendor_data.append({
+                                    "Security Engine": engine,
+                                    "Category": details.get('category'),
+                                    "Result": details.get('result')
+                                })
+                            
+                            df_vendors = pd.DataFrame(vendor_data)
+                            
+                            filter_choice = st.selectbox("Filter Results by Status", ["All Engines", "Malicious / Suspicious Only", "Harmless Only"])
+                            
+                            if filter_choice == "Malicious / Suspicious Only":
+                                df_vendors = df_vendors[df_vendors['Category'].isin(['malicious', 'suspicious'])]
+                            elif filter_choice == "Harmless Only":
+                                df_vendors = df_vendors[df_vendors['Category'] == 'harmless']
+                                
+                            st.dataframe(df_vendors, use_container_width=True, hide_index=True)
+                        else:
+                            st.info("Detailed engine breakdown not available for this target format.")
 
     def run_otx_threat_feed(self):
         st.title("🛰️ AlienVault OTX Threat Intelligence Feed")
