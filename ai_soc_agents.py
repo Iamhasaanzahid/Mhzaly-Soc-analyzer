@@ -1,14 +1,11 @@
 import os
-from dotenv import load_dotenv
 from crewai import Agent, Task, Crew, Process
 
-# Seedhe aapki .env file se API key utا lega (Koi st.secrets ka chakkar nahi)
-load_dotenv()
+# Direct Gemini API Key setup (No external file dependency)
+API_KEY = "AQ.Ab8RN6KixkLrHNZPohMZxmaxJfR9h2cGG9Pf1vC1HTCRU4Iz4w"
 
-# Yahan apni Google API key direct bhi daal sakte hain taaki kabhi error na aaye
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") or "AQ.Ab8RN6KixkLrHNZPohMZxmaxJfR9h2cGG9Pf1vC1HTCRU4Iz4w"
-os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
-os.environ["GEMINI_API_KEY"] = GOOGLE_API_KEY
+os.environ["GOOGLE_API_KEY"] = API_KEY
+os.environ["GEMINI_API_KEY"] = API_KEY
 
 def run_autonomous_soc_analysis(logs_data):
     
