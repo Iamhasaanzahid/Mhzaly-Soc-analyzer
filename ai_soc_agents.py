@@ -1,19 +1,25 @@
 import os
 import streamlit as st
+from dotenv import load_dotenv
 from crewai import Agent, Task, Crew, Process
 
-# Local aur Cloud dono ke liye safe tareeqa se API key uthana
-try:
-    google_key = st.secrets["GOOGLE_API_KEY"]
-    gemini_key = st.secrets["GEMINI_API_KEY"]
-except Exception:
-    import dotenv
-    dotenv.load_dotenv()
-    google_key = os.getenv("GOOGLE_API_KEY")
-    gemini_key = os.getenv("GEMINI_API_KEY")
+# 1. Sabse pehle local computer ki .env file load karein
+load_dotenv()
 
-os.environ["GOOGLE_API_KEY"] = google_key
-os.environ["GEMINI_API_KEY"] = gemini_key
+# 2. Local environment se keys uthane ki koshish karein
+google_key = os.getenv("GOOGLE_API_KEY")
+gemini_key = os.getenv("GEMINI_API_KEY")
+
+# 3. Agar local .env mein keys na milein, tab Streamlit Cloud ke secrets check karein
+if not google_key:
+    try:
+        google_key = st.secrets["GOOGLE_API_KEY"]
+        gemini_key = st.secrets["GEMINI_API_KEY"]
+    except Exception:
+        pass
+
+os.environ["GOOGLE_API_KEY"] = google_key or ""
+os.environ["GEMINI_API_KEY"] = gemini_key or ""
 
 def run_autonomous_soc_analysis(logs_data):
     
