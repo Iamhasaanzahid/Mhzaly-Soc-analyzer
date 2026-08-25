@@ -66,7 +66,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Defense Platform"
-        self.version = "16.0 Elite Production"
+        self.version = "17.0 Elite Production"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -279,7 +279,6 @@ class SOCDashboardUI:
                         st.success("OTX Intelligence Telemetry Retrieved Successfully!")
                         pulse_count = res.get("threat_pulse_count", 0)
                         
-                        # High-level metrics display
                         c1, c2, c3 = st.columns(3)
                         c1.metric("Active Threat Pulses", pulse_count)
                         c2.metric("Hosting Country", res.get("country", "N/A"))
@@ -289,7 +288,6 @@ class SOCDashboardUI:
                         if pulse_count > 0:
                             st.error(f"🚨 Threat Alert: This indicator is linked to {pulse_count} active security campaigns worldwide!")
                             
-                            # Detailed Pulses Table
                             st.markdown("### 📋 Associated Threat Campaigns (Pulses)")
                             detailed_pulses = res.get("detailed_pulses", [])
                             if detailed_pulses:
@@ -298,13 +296,11 @@ class SOCDashboardUI:
                         else:
                             st.success("🟢 Clean Posture: No malicious threat campaigns or threat actor pulses recorded in OTX database.")
                             
-                        # Additional Details & Malware Families
                         malware_families = res.get("malware_families", [])
                         if malware_families:
                             st.markdown("### 🦠 Associated Malware Families:")
                             st.write(", ".join(malware_families))
 
-                        # References section
                         references = res.get("references", [])
                         if references:
                             st.markdown("### 🔍 Investigation References & IOC Sources:")
@@ -326,18 +322,30 @@ class SOCDashboardUI:
                     total_lines = len(lines)
                     
                     failed_logins = 0
-                    suspicious_ips = []
                     success_logins = 0
+                    anomaly_records = []
                     
                     for line in lines:
                         lower_line = line.lower()
+                        ip_match = re.search(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', line)
+                        ip_found = ip_match.group() if ip_match else "Unknown IP"
+                        
                         if "fail" in lower_line or "invalid" in lower_line or "error" in lower_line:
                             failed_logins += 1
-                            match = re.search(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', line)
-                            if match:
-                                suspicious_ips.append(match.group())
+                            anomaly_records.append({
+                                "Log Entry": line,
+                                "Status": "Malicious / Failed",
+                                "Source IP": ip_found,
+                                "Threat Level": "High"
+                            })
                         elif "accepted" in lower_line or "success" in lower_line or "logged in" in lower_line:
                             success_logins += 1
+                            anomaly_records.append({
+                                "Log Entry": line,
+                                "Status": "Successful Session",
+                                "Source IP": ip_found,
+                                "Threat Level": "Low"
+                            })
                             
                     st.success("Log Heuristic Analysis Complete!")
                     
@@ -346,13 +354,23 @@ class SOCDashboardUI:
                     c2.error(f"🚨 Failed / Auth Errors: {failed_logins}")
                     c3.success(f"✅ Successful Sessions: {success_logins}")
                     
-                    if suspicious_ips:
-                        st.markdown("### ⚠️ Potential Attacker IPs Detected:")
-                        unique_ips = list(set(suspicious_ips))
-                        st.write(unique_ips)
-                        st.info("💡 Recommendation: Cross-reference these IPs with threat intelligence feeds and apply firewall blocks.")
+                    st.markdown("---")
+                    st.markdown("### 📊 Detailed SIEM Anomaly & Incident Breakdown")
+                    
+                    if anomaly_records:
+                        df_logs = pd.DataFrame(anomaly_records)
+                        
+                        log_filter = st.selectbox("Filter Log Events", ["All Events", "Malicious / Failed Only", "Successful Sessions Only"])
+                        
+                        if log_filter == "Malicious / Failed Only":
+                            df_logs = df_logs[df_logs['Threat Level'] == 'High']
+                        elif log_filter == "Successful Sessions Only":
+                            df_logs = df_logs[df_logs['Threat Level'] == 'Low']
+                            
+                        st.dataframe(df_logs, use_container_width=True, hide_index=True)
+                        st.info("💡 Recommendation: Review the highlighted source IPs, cross-check them in Global Threat Intel, and enforce strict firewall rules.")
                     else:
-                        st.info("✨ No obvious brute-force patterns detected in the provided log sample.")
+                        st.info("✨ No log records parsed.")
             else:
                 st.warning("Please paste some log data to analyze.")
 
@@ -477,7 +495,7 @@ if __name__ == "__main__":
         app.run_incident_response()
     elif choice == "Vulnerability Management":
         app.run_vulnerability_management()
-    elif choice == "Web Application Threat Analyzer":
+    elif choice == "WebApplication Threat Analyzer":
         app.run_threat_analyzer()
     elif choice == "Live Incident Defense & Reporting":
         app.run_incident_defense()
