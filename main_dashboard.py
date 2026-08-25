@@ -1,21 +1,10 @@
 # main_dashboard.py - MHZALY Enterprise SOC & Threat Hunting Platform 
-# (Updated with Autonomous AI Agents)
 
 import streamlit as st
 import pandas as pd
 import os
 import hashlib
-import re
 from datetime import datetime
-
-# ==========================================
-# 🤖 NEW: AI SOC Agents Backend Module
-# ==========================================
-try:
-    from ai_soc_agents import run_autonomous_soc_analysis
-except ImportError:
-    # Fallback agar ai_soc_agents.py file missing ho
-    def run_autonomous_soc_analysis(logs): return "**Error:** `ai_soc_agents.py` file missing hai ya CrewAI install nahi hua."
 
 # --- Safe Backend Modules Import (Fallback mechanism) ---
 try:
@@ -70,7 +59,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Hunting Platform"
-        self.version = "9.0 Pro Ultimate (AI Edition)"
+        self.version = "9.0 Pro Ultimate"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -104,10 +93,6 @@ class SOCDashboardUI:
             color: #00ff00 !important;
             border: 1px solid #30363d !important;
         }
-        .stTextInput>div>div>input:focus, .stTextArea>div>div>textarea:focus {
-            border-color: #00ff00 !important;
-            box-shadow: 0 0 5px #00ff00 !important;
-        }
         .stButton>button {
             background-color: transparent !important;
             color: #00ff00 !important;
@@ -137,7 +122,6 @@ class SOCDashboardUI:
         st.sidebar.markdown("---")
         return st.sidebar.radio("Navigation Menu", [
             "Overview & Dashboard",
-            "🤖 Autonomous AI SOC Agents", # <-- NAYA AI MENU ITEM
             "Global Threat Intel (VirusTotal)", 
             "Deep Bug Bounty & Vulnerability Scanner", 
             "OSINT & Google Dork Reconnaissance",  
@@ -157,7 +141,7 @@ class SOCDashboardUI:
         
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Active Modules", "11 Core Engines", "Fully Integrated")
+            st.metric("Active Modules", "10 Core Engines", "Fully Integrated")
         with col2:
             st.metric("SOC Status", "Online", "Protected")
         with col3:
@@ -180,37 +164,9 @@ class SOCDashboardUI:
         else:
             st.warning("⚠️ No active security incidents logged yet. Use 'Live Incident Defense & Reporting' to record threats.")
 
-    # ==========================================
-    # 🤖 NEW: AI SOC Agents Page Function
-    # ==========================================
-    def run_ai_soc_agents(self):
-        st.title("🤖 Autonomous AI SOC Analysts")
-        st.markdown("> **Multi-Agent Architecture:** Manager, Threat Hunter, aur Incident Responder AI aapas mein mil kar system logs ko analyze karte hain.")
-        
-        dummy_logs = """[10:05:22] GET /login.php - 192.168.1.5 - Status: 200
-[10:05:25] POST /login.php username=admin password=123 - 192.168.1.5 - Status: 401
-[10:05:27] POST /login.php username=admin password=admin - 192.168.1.5 - Status: 401
-[10:06:01] GET /search.php?q=<script>alert('xss')</script> - 203.11.22.3 - Status: 200"""
-        
-        logs_input = st.text_area("Input Raw Logs / Data for AI Analysis:", value=dummy_logs, height=200)
-        
-        if st.button("🚀 Initialize Autonomous Threat Hunt"):
-            if logs_input:
-                with st.spinner("🧠 AI Cyber-Agents active ho gaye hain! Logs analyze ho rahe hain (Isme 1-2 minutes lag sakte hain)..."):
-                    try:
-                        report = run_autonomous_soc_analysis(logs_input)
-                        st.success("✅ AI Analysis Complete!")
-                        st.markdown("---")
-                        st.markdown("### 📊 AI Incident Report")
-                        st.markdown(report)
-                    except Exception as e:
-                        st.error(f"⚠️ Agent Communication Error: {e}")
-            else:
-                st.warning("Please provide logs for analysis.")
-
     def run_threat_intel(self):
         st.title("🌐 Global Threat Intelligence (VirusTotal API)")
-        st.markdown("Scan IP/Domain against global threat feeds:")
+        st.markdown("Scan IP/Domain against global threat feeds using your secure API key:")
         
         target = st.text_input("Enter IP or Domain (e.g., 8.8.8.8):")
         if st.button("Initiate Deep Scan"):
@@ -327,14 +283,10 @@ if __name__ == "__main__":
     app = SOCDashboardUI()
     app.setup_page_config()
     
-    # Get user selection from sidebar
     choice = app.render_sidebar()
     
-    # Route to the correct page based on selection
     if choice == "Overview & Dashboard":
         app.run_overview()
-    elif choice == "🤖 Autonomous AI SOC Agents":
-        app.run_ai_soc_agents()
     elif choice == "Global Threat Intel (VirusTotal)":
         app.run_threat_intel()
     elif choice == "Deep Bug Bounty & Vulnerability Scanner":
