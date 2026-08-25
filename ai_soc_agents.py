@@ -2,7 +2,7 @@ import os
 import streamlit as st
 from crewai import Agent, Task, Crew, Process
 
-# Local aur Cloud dono ke liye safe tareeqa (Try st.secrets first, then fallback to .env)
+# Local aur Cloud dono ke liye safe tareeqa se API key uthana
 try:
     google_key = st.secrets["GOOGLE_API_KEY"]
     gemini_key = st.secrets["GEMINI_API_KEY"]
