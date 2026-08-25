@@ -1,50 +1,66 @@
-# osint_dorks.py - OSINT & Google Dorking Reconnaissance Module for MHZALY-SOC
+# osint_dorks.py - Advanced OSINT & Google Dorking Reconnaissance Module for MHZALY-SOC
 
 import streamlit as st
+import pandas as pd
+import urllib.parse
 
 def render_osint_dorks_module():
-    st.markdown("### 🌐 OSINT & Google Dorking Reconnaissance")
-    st.markdown("Leverage advanced search operators and Google Dorking payloads for threat intelligence, asset discovery, and vulnerability assessment.")
+    st.title("🌐 OSINT & Google Dorking Reconnaissance")
+    st.markdown("Automate open-source intelligence footprinting and defensive reconnaissance queries for target assets.")
 
-    # Categories based on modern security intelligence
     dork_categories = {
         "01. Sensitive Files & Credentials": [
-            ("Database Dumps & Backups", 'site:target.com filetype:sql OR filetype:bak OR filetype:dump'),
-            ("Private Keys & Configs", 'site:target.com ext:pem OR ext:key OR ext:env OR inurl:config'),
-            ("Log Files with Passwords", 'site:target.com intext:"password" filetype:log')
+            ("Database Dumps & Backups", 'site:target.com (filetype:sql OR filetype:bak OR filetype:dump)', "Critical"),
+            ("Private Keys & Environment Configs", 'site:target.com (ext:pem OR ext:key OR ext:env OR inurl:config)', "Critical"),
+            ("Exposed Log Files with Passwords", 'site:target.com intext:"password" filetype:log', "High")
         ],
         "02. Cloud Infrastructure & DevOps": [
-            ("Public S3 Buckets", 'site:s3.amazonaws.com "target.com"'),
-            ("CI/CD Pipelines (Jenkins/GitLab)", 'site:target.com inurl:jenkins OR inurl:gitlab-ci'),
-            ("Container Dashboards", 'site:target.com inurl:kubernetes OR inurl:grafana')
+            ("Public S3 Buckets", 'site:s3.amazonaws.com "target.com"', "High"),
+            ("CI/CD Automation Pipelines", 'site:target.com (inurl:jenkins OR inurl:gitlab-ci)', "Medium"),
+            ("Container Dashboards & Telemetry", 'site:target.com (inurl:kubernetes OR inurl:grafana)', "High")
         ],
         "03. Modern SaaS & API Endpoints": [
-            ("Swagger / API Docs", 'site:target.com inurl:swagger OR inurl:api-docs'),
-            ("Admin Portals & SSO", 'site:target.com inurl:admin OR inurl:auth/login'),
-            ("GraphQL Endpoints", 'site:target.com inurl:graphql')
+            ("Swagger / API Documentation", 'site:target.com (inurl:swagger OR inurl:api-docs)', "Medium"),
+            ("Admin Portals & SSO Endpoints", 'site:target.com (inurl:admin OR inurl:auth/login)', "Medium"),
+            ("GraphQL Endpoints", 'site:target.com inurl:graphql', "Low")
         ],
-        "04. AI & Machine Learning Infrastructure": [
-            ("Exposed OpenAI/API Keys in Notebooks", 'site:target.com filetype:ipynb "OPENAI_API_KEY"'),
-            ("Vector Databases & MLFlow", 'site:target.com inurl:mlflow OR inurl:chroma')
+        "04. AI & ML Infrastructure": [
+            ("Exposed OpenAI/API Tokens in Notebooks", 'site:target.com filetype:ipynb "OPENAI_API_KEY"', "Critical"),
+            ("Vector Databases & MLflow Tracking", 'site:target.com (inurl:mlflow OR inurl:chroma)', "Medium")
         ]
     }
 
-    selected_category = st.selectbox("Select Reconnaissance Category", list(dork_categories.keys()))
-    
-    st.markdown(f"#### 🔎 Payloads for: {selected_category}")
-    target_domain = st.text_input("Enter Target Domain (e.g., target.com):", "example.com")
+    target_domain = st.text_input("Enter Target Domain (e.g., example.com):", "example.com")
+    clean_domain = target_domain.replace("https://", "").replace("http://", "").strip("/").split("/")[0]
+
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        selected_category = st.selectbox("Select Reconnaissance Category", list(dork_categories.keys()))
+    with col2:
+        st.metric("Target Asset", clean_domain, "Domain Active")
 
     st.markdown("---")
-    st.markdown("### Generated Dork Queries (Click to Copy & Search):")
+    st.markdown(f"### 🎯 Active Query Set: {selected_category}")
 
-    for name, query_template in dork_categories[selected_category]:
-        final_query = query_template.replace("target.com", target_domain)
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.code(final_query, language="text")
-        with col2:
-            search_url = f"https://www.google.com/search?q={final_query}"
-            st.markdown(f"[🔍 Google Search]({search_url})", unsafe_allow_html=True)
+    recon_records = []
+    for name, query_template, risk in dork_categories[selected_category]:
+        final_query = query_template.replace("target.com", clean_domain)
+        encoded_query = urllib.parse.quote(final_query)
+        search_url = f"https://www.google.com/search?q={encoded_query}"
+        
+        recon_records.append({
+            "Vector Objective": name,
+            "Risk Rating": risk,
+            "Google Dork Payload": final_query,
+            "Launch URL": search_url
+        })
+
+    df_recon = pd.DataFrame(recon_records)
+    st.dataframe(df_recon[["Vector Objective", "Risk Rating", "Google Dork Payload"]], use_container_width=True, hide_index=True)
+
+    st.markdown("### 🚀 Live Search Actions")
+    for item in recon_records:
+        st.markdown(f"- **{item['Vector Objective']}** (`{item['Risk Rating']}`): [Launch Query on Search Engine ↗]({item['Launch URL']})")
 
 if __name__ == "__main__":
     render_osint_dorks_module()
