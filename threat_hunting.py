@@ -1,4 +1,8 @@
+# threat_hunting.py - Proactive Threat Hunting & Deobfuscation Engine
+
 import uuid
+import re
+import base64
 from datetime import datetime
 
 class ThreatHunter:
@@ -8,8 +12,17 @@ class ThreatHunter:
         self.hunt_hypotheses = []
         self.indicators_of_compromise = []
         self.hunt_results = []
+        
+        # Comprehensive evasion & obfuscation detection patterns
+        self.suspicious_patterns = {
+            "Base64 Decoding Pattern": r"FromBase64String|-enc|-encodedcommand",
+            "Dynamic Expression Execution": r"iex|invoke-expression|Invoke-Command",
+            "Hidden Window / Process Evasion": r"-w\s+hidden|-windowstyle\s+hidden|-nop|-noprofile",
+            "Remote Payload Staging": r"invoke-webrequest|downloadstring|downloadfile|Net\.WebClient|curl|wget",
+            "Execution Policy / AMSI Bypass": r"bypass|-exec\s+bypass|rundll32|regsvr32"
+        }
 
-    # --- 1. Hunt Planning & Hypothesis Generation (Real Logic) ---
+    # --- 1. Hunt Planning & Hypothesis Generation ---
     def create_hunt_campaign(self, campaign_name, description):
         """ایک نئی تھریٹ ہنٹنگ کمپین اور یونیک آئی ڈی بناتا ہے"""
         hunt_id = f"HUNT-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
@@ -36,18 +49,65 @@ class ThreatHunter:
         self.hunt_hypotheses.append(hypothesis)
         return {"status": "Hypothesis defined and attached to hunt successfully.", "hypothesis": hypothesis}
 
-    # --- 2. Endpoint & PowerShell Threat Hunting ---
+    # --- 2. Advanced Endpoint & PowerShell Threat Hunting (Deep Deobfuscation) ---
     def hunt_powershell_obfuscation(self, script_content):
-        """پاورشیل سکرپٹس کے اندر سے اوبفسکیٹڈ (چھپی ہوئی) یا خطرناک کمانڈز تلاش کرتا ہے"""
-        suspicious_keywords = ["-enc", "EncodedCommand", "Invoke-Expression", "IEX", "DownloadString", "Net.WebClient"]
-        found_indicators = [kw for kw in suspicious_keywords if kw.lower() in script_content.lower()]
-        
-        if found_indicators:
-            return {
-                "status": "ALERT: Potential PowerShell obfuscation or malicious payload detected!",
-                "indicators": found_indicators
+        """پاورشیل سکرپٹس کے اندر سے اوبفسکیٹڈ کمانڈز تلاش، ڈی کوڈ اور تجزیہ کرتا ہے"""
+        if not script_content:
+            return {"error": "Empty payload string"}
+
+        findings = []
+        decoded_strings = []
+        risk_score = 0
+
+        # 1. Regex check for suspicious patterns & techniques
+        for name, pattern in self.suspicious_patterns.items():
+            matches = re.findall(pattern, script_content, re.IGNORECASE)
+            if matches:
+                risk_score += 25
+                findings.append({
+                    "Technique": name,
+                    "Detected Trigger": ", ".join(list(set(matches))),
+                    "Threat Weight": "High" if "Dynamic" in name or "Base64" in name else "Medium"
+                })
+
+        # 2. Extract and decode Base64 chunks automatically
+        b64_matches = re.findall(r'[A-Za-z0-9+/=]{16,}', script_content)
+        for chunk in b64_matches:
+            try:
+                # Try standard UTF-8 decode
+                decoded = base64.b64decode(chunk).decode('utf-8', errors='ignore')
+                # Try UTF-16LE decode if output contains non-printable artifacts
+                if not decoded.isprintable() or len(decoded.strip()) < 3:
+                    decoded = base64.b64decode(chunk).decode('utf-16le', errors='ignore')
+                
+                clean_text = "".join([c for c in decoded if c.isprintable()]).strip()
+                if len(clean_text) > 3:
+                    decoded_strings.append(clean_text)
+            except Exception:
+                pass
+
+        # 3. Extract IOCs from both raw payload and decoded text
+        combined_text = script_content + " " + " ".join(decoded_strings)
+        extracted_ips = re.findall(r'\b\d{1,3}(?:\.\d{1,3}){3}\b', combined_text)
+        extracted_urls = re.findall(r'https?://[^\s"\'>]+', combined_text)
+        extracted_paths = re.findall(r'[A-Za-z]:\\[A-Za-z0-9_\-\\]+', combined_text)
+
+        severity = "CLEAN"
+        if risk_score >= 50 or decoded_strings:
+            severity = "HIGH THREAT" if risk_score >= 50 else "SUSPICIOUS"
+
+        return {
+            "status": "Analysis Complete",
+            "severity": severity,
+            "risk_score": min(risk_score, 100),
+            "findings": findings,
+            "decoded_payloads": decoded_strings,
+            "iocs": {
+                "IP Addresses": list(set(extracted_ips)),
+                "URLs": list(set(extracted_urls)),
+                "File Paths": list(set(extracted_paths))
             }
-        return {"status": "Clean: No obvious PowerShell obfuscation patterns found."}
+        }
 
     # --- 3. IOC Sweeping & Threat Intel Integration ---
     def sweep_ip_addresses(self, target_ips, known_malicious_ips):
@@ -64,11 +124,13 @@ class ThreatHunter:
         mitre_mapping = {
             "T1059.001": "Command and Scripting Interpreter: PowerShell",
             "T1078": "Valid Accounts",
-            "T1021": "Remote Services"
+            "T1021": "Remote Services",
+            "T1027": "Obfuscated Files or Information",
+            "T1105": "Ingress Tool Transfer"
         }
         technique_name = mitre_mapping.get(technique_id, "Unknown Technique")
         return {
-            "status": f"Mapped hunt findings to MITRE ATT&CK.",
+            "status": "Mapped hunt findings to MITRE ATT&CK.",
             "technique_id": technique_id,
             "technique_name": technique_name
         }
@@ -84,4 +146,3 @@ class ThreatHunter:
                 "total_hypotheses": len(self.hunt_hypotheses)
             }
         return {"status": "Hunt campaign not found."}
-    
