@@ -238,7 +238,7 @@ class SOCDashboardUI:
         st.title("🌐 Global Threat Intelligence (VirusTotal API)")
         st.markdown("Analyze infrastructure indicators against global threat feeds:")
         
-        target = st.text_input("Enter IP Address or Domain (e.g., 8.8.8.8):")
+        target = st.text_input("Enter IP Address or Domain:", placeholder="e.g., 8.8.8.8 or suspicious-domain.com")
         if st.button("Initiate Deep Scan"):
             if target:
                 with st.spinner("Establishing secure connection to threat databases..."):
@@ -283,7 +283,7 @@ class SOCDashboardUI:
         with col1:
             indicator_type = st.selectbox("Select Indicator Type", ["IP", "Domain"])
         with col2:
-            query_target = st.text_input("Enter Indicator (e.g., 8.8.8.8 or example.com):")
+            query_target = st.text_input("Enter Indicator:", placeholder="e.g., 8.8.8.8 or example.com")
             
         if st.button("Query OTX Telemetry"):
             if query_target:
@@ -314,7 +314,7 @@ class SOCDashboardUI:
         st.title("🛡️ SIEM & Log Anomaly Detector")
         st.markdown("Analyze raw server, firewall, or authentication logs to identify unauthorized access and anomalies.")
         
-        raw_logs = st.text_area("Paste Raw Server / Firewall / Auth Logs Here:", placeholder="Failed password for root from 192.168.1.50 port 22...")
+        raw_logs = st.text_area("Paste Raw Server / Firewall / Auth Logs Here:", placeholder="e.g., Failed password for root from 192.168.1.50 port 22...")
         
         if st.button("Analyze Logs for Anomalies"):
             if raw_logs:
@@ -369,7 +369,7 @@ class SOCDashboardUI:
         st.title("🔍 Infrastructure & Security Header Analyzer")
         st.markdown("Perform deep security header analysis and vulnerability mapping for bug bounty assessment:")
         
-        domain = st.text_input("Enter Target Domain (e.g., example.com):")
+        domain = st.text_input("Enter Target Domain:", placeholder="e.g., target-asset.com")
         if st.button("Execute Infrastructure Scan"):
             if domain:
                 with st.spinner(f"Mapping attack surface and inspecting headers for {domain}..."):
@@ -407,7 +407,7 @@ class SOCDashboardUI:
             ]
         }
 
-        target_domain = st.text_input("Enter Target Domain (e.g., example.com):", "google.com")
+        target_domain = st.text_input("Enter Target Domain:", placeholder="e.g., example.com", value="google.com")
         clean_domain = target_domain.replace("https://", "").replace("http://", "").strip("/").split("/")[0]
 
         selected_category = st.selectbox("Select Reconnaissance Category", list(dork_categories.keys()))
@@ -431,7 +431,7 @@ class SOCDashboardUI:
 
     def run_crypto_analyzer(self):
         st.title("🔐 Cryptographic Hash & Password Strength Analyzer")
-        target_input = st.text_input("Enter Data String:", type="password")
+        target_input = st.text_input("Enter Data String / Password:", placeholder="Enter secret string...", type="password")
         if target_input:
             md5_hash = hashlib.md5(target_input.encode()).hexdigest()
             sha256_hash = hashlib.sha256(target_input.encode()).hexdigest()
@@ -442,7 +442,7 @@ class SOCDashboardUI:
         st.title("🎯 Proactive Threat Hunting & IOC Analysis")
         st.markdown("Deep payload deobfuscation, PowerShell technique inspection, and automated IOC extraction.")
         
-        script_input = st.text_area("Input PowerShell / Base64 Script Payload:", height=120)
+        script_input = st.text_area("Input PowerShell / Base64 Script Payload:", placeholder="e.g., JABzAD0ef... or Invoke-Expression...", height=120)
         if st.button("Execute Hunt Protocol"):
             if script_input:
                 with st.spinner("Analyzing payload indicators..."):
@@ -467,7 +467,7 @@ class SOCDashboardUI:
         st.title("🔎 Digital Forensics & Log Artifact Extraction")
         st.markdown("Extract forensic artifacts, cryptographic hashes, network indicators, and system paths from raw dumps.")
         
-        logs_input = st.text_area("Input Raw Logs / Hex Dump / Memory Strings:", height=140)
+        logs_input = st.text_area("Input Raw Logs / Hex Dump / Memory Strings:", placeholder="Paste raw event logs or memory artifacts here...", height=140)
         if st.button("Extract Artifacts"):
             if logs_input:
                 with st.spinner("Parsing memory dump and extracting forensic indicators..."):
@@ -504,7 +504,7 @@ class SOCDashboardUI:
         
         col1, col2 = st.columns([2, 1])
         with col1:
-            target = st.text_input("Compromised Asset / Host ID (e.g., SRV-FINANCE-01, 192.168.10.45):", "")
+            target = st.text_input("Compromised Asset / Host ID:", placeholder="e.g., SRV-FINANCE-01 or 192.168.10.45", value="")
         with col2:
             severity = st.selectbox("Incident Severity", ["CRITICAL", "HIGH", "MEDIUM", "LOW"], index=1)
             
@@ -566,7 +566,7 @@ class SOCDashboardUI:
         st.title("📊 Vulnerability & CVSS v3.1 Risk Assessment")
         st.markdown("Calculate standard CVSS v3.1 base scores, vector strings, and remediation SLA directives.")
         
-        # 🔗 Helpful Guidance Box for CVSS Evaluation Reference
+        # 💡 Helpful Guidance Box & Evaluation Reference with Links
         st.info(
             "💡 **CVSS v3.1 Evaluation Guide:** To correctly select parameters below and assess vulnerability severity, "
             "refer to the official [FIRST CVSS v3.1 Specification Document](https://www.first.org/cvss/v3.1/specification-document) "
@@ -621,6 +621,13 @@ class SOCDashboardUI:
     def run_threat_analyzer(self):
         st.title("🔬 Web Application Threat & Payload Analyzer")
         st.markdown("Deep inspection of HTTP parameters, web payloads, and OWASP Top 10 attack vectors (SQLi, XSS, RCE, SSRF, Traversal).")
+
+        # 💡 Added Side Guidance & Example Reference Box
+        st.markdown(
+            "> **💡 Quick Test Examples (Copy & Paste):**\n"
+            "> * **SQLi:** `?id=1' OR '1'='1` or `admin' UNION SELECT null, username, password FROM users--`\n"
+            "> * **XSS:** `<script>alert(1)</script>` or `<img src=x onerror=alert(1)>`"
+        )
 
         payload = st.text_input("Input Parameter / URI String / HTTP Payload:", 
                                 value="", placeholder="e.g., ?id=1' OR '1'='1 or <script>alert(1)</script>")
