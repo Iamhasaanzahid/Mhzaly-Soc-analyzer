@@ -504,13 +504,11 @@ class SOCDashboardUI:
         
         col1, col2 = st.columns([2, 1])
         with col1:
-            target = st.text_input("Compromised Asset / Host ID (e.g., SRV-FINANCE-01, 192.168.10.45):", "SRV-FINANCE-01")
+            target = st.text_input("Compromised Asset / Host ID (e.g., SRV-FINANCE-01, 192.168.10.45):", "")
         with col2:
             severity = st.selectbox("Incident Severity", ["CRITICAL", "HIGH", "MEDIUM", "LOW"], index=1)
             
-        desc = st.text_area("Event Description & Scope:", 
-                            value="Multiple unauthorized PowerShell executions detected attempting LSASS memory dumps. Associated with external C2 beaconing to 203.0.113.88. Host isolated pending forensic snapshot.",
-                            height=100)
+        desc = st.text_area("Event Description & Scope:", placeholder="Enter incident details, scope, and suspected vectors...", height=100)
         
         if st.button("Initialize Response Ticket & Execute SOAR Playbook"):
             if target and desc:
@@ -567,6 +565,13 @@ class SOCDashboardUI:
     def run_vulnerability_management(self):
         st.title("📊 Vulnerability & CVSS v3.1 Risk Assessment")
         st.markdown("Calculate standard CVSS v3.1 base scores, vector strings, and remediation SLA directives.")
+        
+        # 🔗 Helpful Guidance Box for CVSS Evaluation Reference
+        st.info(
+            "💡 **CVSS v3.1 Evaluation Guide:** To correctly select parameters below and assess vulnerability severity, "
+            "refer to the official [FIRST CVSS v3.1 Specification Document](https://www.first.org/cvss/v3.1/specification-document) "
+            "or use the interactive [FIRST CVSS v3.1 Calculator](https://www.first.org/cvss/calculator/3.1)."
+        )
 
         st.markdown("### ⚙️ Attack Vector & Exploitability Parameters")
         c1, c2, c3, c4 = st.columns(4)
@@ -618,7 +623,7 @@ class SOCDashboardUI:
         st.markdown("Deep inspection of HTTP parameters, web payloads, and OWASP Top 10 attack vectors (SQLi, XSS, RCE, SSRF, Traversal).")
 
         payload = st.text_input("Input Parameter / URI String / HTTP Payload:", 
-                                value="admin' UNION SELECT null, username, password FROM users-- ; cat /etc/passwd")
+                                value="", placeholder="e.g., ?id=1' OR '1'='1 or <script>alert(1)</script>")
         
         if st.button("Execute Deep Payload Inspection"):
             if payload:
@@ -653,8 +658,10 @@ class SOCDashboardUI:
 
     def run_incident_defense(self):
         st.title("📝 Incident Defense & Evidence Ledger")
-        scam_target = st.text_input("Compromised/Malicious Asset:")
-        evidence_notes = st.text_area("Forensic Investigation Notes:")
+        st.markdown("Record threat intelligence notes and commit forensic evidence to the immutable local audit trail.")
+        
+        scam_target = st.text_input("Compromised/Malicious Asset:", placeholder="e.g., 192.168.1.100 or malware.exe")
+        evidence_notes = st.text_area("Forensic Investigation Notes:", placeholder="Enter findings, IoCs, and mitigation actions taken...")
         
         if st.button("Commit to Immutable Ledger"):
             if scam_target:
@@ -665,7 +672,9 @@ class SOCDashboardUI:
                     audit_df.to_csv(file_name, mode='a', header=False, index=False)
                 else:
                     audit_df.to_csv(file_name, index=False)
-                st.success("Evidence secured in local SIEM database.")
+                st.success("Evidence secured in local SIEM database ledger.")
+            else:
+                st.warning("Please specify a compromised asset.")
 
 
 # ==========================================
