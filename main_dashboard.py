@@ -1,4 +1,3 @@
-# main_dashboard.py - MHZALY AI Enterprise SOC & Threat Defense Platform (Elite Edition)
 # main_dashboard.py - MHZALY Enterprise SOC & Threat Defense Platform (Elite Edition)
 
 import streamlit as st
@@ -10,15 +9,6 @@ import urllib.parse
 from datetime import datetime
 
 # --- Safe Backend Modules Import (Fallback mechanism) ---
-
-# [NEW] AI Agent Module Import
-try:
-    from ai_agent import AutonomousSOCAgent
-except ImportError:
-    class AutonomousSOCAgent:
-        def analyze_domain_or_ip(self, t): return {"error": "AI Agent module missing"}
-        def analyze_raw_telemetry(self, l): return {"error": "AI Agent module missing"}
-
 try:
     from threat_intel import ThreatIntelProcessor
 except ImportError:
@@ -98,10 +88,9 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Defense Platform"
-        self.version = "30.0 Elite Production (AI Enhanced)"
+        self.version = "29.0 Elite Production"
         
         # Initialize Engines safely
-        self.ai_brain = AutonomousSOCAgent()  # [NEW] AI Engine Initialized
         self.processor = ThreatIntelProcessor()
         self.otx_processor = OTXThreatIntel()
         self.forensics = DigitalForensicsAnalyzer()
@@ -230,7 +219,6 @@ class SOCDashboardUI:
         st.sidebar.markdown("---")
         return st.sidebar.radio("Command Navigation", [
             "Overview & Dashboard",
-            "🤖 Autonomous AI SOC Analyst", # [NEW] Added AI Option here
             "Global Threat Intel (VirusTotal)", 
             "AlienVault OTX Live Threat Feed", 
             "SIEM & Log Anomaly Detector",         
@@ -254,7 +242,7 @@ class SOCDashboardUI:
         
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Active Defense Engines", "13 Modules", "Operational") # Updated count
+            st.metric("Active Defense Engines", "12 Modules", "Operational")
         with col2:
             st.metric("SOC Posture", "Protected", "Secure")
         with col3:
@@ -269,78 +257,14 @@ class SOCDashboardUI:
         if os.path.exists(file_name):
             try:
                 real_log_data = pd.read_csv(file_name)
-                
-                # [NEW] Sorting Feature added here
-                if not real_log_data.empty:
-                    sort_col1, sort_col2 = st.columns(2)
-                    with sort_col1:
-                        sort_field = st.selectbox("Sort Events By:", real_log_data.columns.tolist())
-                    with sort_col2:
-                        sort_order = st.radio("Sort Order:", ["Descending (Newest First)", "Ascending (Oldest First)"], horizontal=True)
-
-                    ascending_flag = True if sort_order == "Ascending (Oldest First)" else False
-                    sorted_data = real_log_data.sort_values(by=sort_field, ascending=ascending_flag)
-                    st.dataframe(sorted_data, use_container_width=True, hide_index=True)
-                else:
-                    st.dataframe(real_log_data, use_container_width=True, hide_index=True)
+                if "Timestamp" in real_log_data.columns:
+                    real_log_data = real_log_data.sort_values(by="Timestamp", ascending=False)
+                st.dataframe(real_log_data, use_container_width=True, hide_index=True)
             except Exception as e:
                 st.error("Error reading live database records.")
         else:
             st.warning("⚠️ No active security incidents logged yet. Use 'Incident Response & SOAR' or 'Live Incident Defense' to record threats.")
 
-    # [NEW] Autonomous AI SOC Analyst Function
-    def run_ai_soc_analyst(self):
-        st.title("🤖 Autonomous AI SOC Analyst")
-        st.markdown("Self-driving security triage: Input an infrastructure indicator or raw event log to generate automated verdicts.")
-        
-        analysis_mode = st.radio("Select Input Mode:", ["Domain / IP Infrastructure", "Raw SIEM Telemetry Log"], horizontal=True)
-        
-        if analysis_mode == "Domain / IP Infrastructure":
-            target = st.text_input("Enter Domain or Target IP:", placeholder="e.g. suspicious-node.xyz or 192.168.10.45")
-            if st.button("Run AI Autonomous Triage"):
-                if target:
-                    with st.spinner("AI Agent orchestrating threat intelligence and assessing risk..."):
-                        report = self.ai_brain.analyze_domain_or_ip(target)
-                        
-                        col1, col2, col3 = st.columns(3)
-                        col1.metric("Calculated Risk Score", f"{report['risk_score']}/100")
-                        col2.metric("Severity Level", report["severity"])
-                        col3.metric("Verdict", report["verdict"])
-                        
-                        st.markdown("---")
-                        st.markdown("### 🧠 AI Findings & Correlation")
-                        for finding in report["findings"]:
-                            st.write(f"- {finding}")
-                            
-                        st.markdown("### 🛠️ Recommended Playbook Actions")
-                        st.success(report["playbook_actions"])
-                else:
-                    st.warning("Please enter a valid target domain or IP.")
-        else:
-            raw_text = st.text_area("Paste Raw Server Logs for AI Triaging:", height=150)
-            if st.button("Run AI Log Analysis"):
-                if raw_text:
-                    with st.spinner("AI Agent analyzing log telemetry patterns..."):
-                        report = self.ai_brain.analyze_raw_telemetry(raw_text)
-                        
-                        col1, col2, col3 = st.columns(3)
-                        col1.metric("Processed Events", report["total_events_processed"])
-                        col2.metric("Attacks Identified", report["attacks_identified"])
-                        col3.metric("Risk Score", f"{report['risk_score']}/100")
-                        
-                        st.markdown("---")
-                        st.markdown("### 🚨 Correlated Security Incidents")
-                        if report["correlated_attacks"]:
-                            st.dataframe(pd.DataFrame(report["correlated_attacks"]), use_container_width=True)
-                        else:
-                            st.info("No offensive or abnormal patterns detected in the logs.")
-                            
-                        st.markdown("### 🛡️ Automated Containment Status")
-                        st.info(report["automated_containment"])
-                else:
-                    st.warning("Please paste raw logs to begin triage.")
-
-    # [RESTORED] Original Functions exactly as you provided
     def run_threat_intel(self):
         st.title("🌐 Global Threat Intelligence (VirusTotal API)")
         st.markdown("Query threat reputations and security engine verdicts across global threat feeds.")
@@ -499,24 +423,180 @@ class SOCDashboardUI:
                             df_findings = pd.DataFrame(findings)
                             st.dataframe(df_findings, use_container_width=True, hide_index=True)
 
-    # Adding placeholder methods for the rest of the menu items so it doesn't crash
-    def run_dorks_recon(self): st.title("🕵️ OSINT & Google Dork Reconnaissance"); st.info("Under Development")
-    def run_crypto_analyzer(self): st.title("🔐 Crypto & Password Analyzer"); st.info("Under Development")
-    def run_threat_hunting(self): st.title("🎯 Threat Hunting & IOCs"); st.info("Under Development")
-    def run_digital_forensics(self): st.title("🔬 Digital Forensics & Logs"); st.info("Under Development")
-    def run_incident_response(self): st.title("🚨 Incident Response & SOAR"); st.info("Under Development")
-    def run_vulnerability_mgmt(self): st.title("📋 Vulnerability Management"); st.info("Under Development")
-    def run_web_threat_analyzer(self): st.title("🌐 Web Application Threat Analyzer"); st.info("Under Development")
+    def run_osint_dorks(self):
+        st.title("🌐 OSINT & Google Dork Reconnaissance")
+        st.markdown("Automate open-source intelligence footprinting and defensive reconnaissance queries for target assets, including WordPress infrastructure.")
 
-def main():
+        dork_categories = {
+            "01. Sensitive Files & Credentials": [
+                ("Database Dumps & Backups", 'site:target.com (filetype:sql OR filetype:bak OR filetype:dump)', "Critical"),
+                ("Private Keys & Environment Configs", 'site:target.com (ext:pem OR ext:key OR ext:env OR inurl:config)', "Critical"),
+                ("Exposed Log Files with Passwords", 'site:target.com intext:"password" filetype:log', "High")
+            ],
+            "02. WordPress Security & Reconnaissance": [
+                ("Exposed WP-Config & Backups", 'site:target.com (inurl:wp-config.php OR inurl:wp-config.bak)', "Critical"),
+                ("Vulnerable / Exposed Plugins", 'site:target.com inurl:/wp-content/plugins/', "High"),
+                ("Uploaded Media & File Dorks", 'site:target.com inurl:/wp-content/uploads/', "Medium"),
+                ("WordPress Author Enumeration", 'site:target.com/?author=', "Medium"),
+                ("Exposed XML-RPC Endpoints", 'site:target.com inurl:xmlrpc.php', "High")
+            ],
+            "03. Cloud Infrastructure & DevOps": [
+                ("Public S3 Buckets", 'site:s3.amazonaws.com "target.com"', "High"),
+                ("CI/CD Automation Pipelines", 'site:target.com (inurl:jenkins OR inurl:gitlab-ci)', "Medium"),
+                ("Container Dashboards & Telemetry", 'site:target.com (inurl:kubernetes OR inurl:grafana)', "High")
+            ],
+            "04. Modern SaaS & API Endpoints": [
+                ("Swagger / API Documentation", 'site:target.com (inurl:swagger OR inurl:api-docs)', "Medium"),
+                ("Admin Portals & SSO Endpoints", 'site:target.com (inurl:admin OR inurl:auth/login)', "Medium"),
+                ("GraphQL Endpoints", 'site:target.com inurl:graphql', "Low")
+            ],
+            "05. AI & ML Infrastructure": [
+                ("Exposed OpenAI/API Tokens in Notebooks", 'site:target.com filetype:ipynb "OPENAI_API_KEY"', "Critical"),
+                ("Vector Databases & MLflow Tracking", 'site:target.com (inurl:mlflow OR inurl:chroma)', "Medium")
+            ]
+        }
+
+        target_domain = st.text_input("Enter Target Domain (e.g., example.com):", "example.com")
+        clean_domain = target_domain.replace("https://", "").replace("http://", "").strip("/").split("/")[0]
+
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            selected_category = st.selectbox("Select Reconnaissance Category", list(dork_categories.keys()))
+        with col2:
+            st.metric("Target Asset", clean_domain, "Domain Active")
+
+        st.markdown("---")
+        st.markdown(f"### 🎯 Active Query Set: {selected_category}")
+
+        recon_records = []
+        for name, query_template, risk in dork_categories[selected_category]:
+            final_query = query_template.replace("target.com", clean_domain)
+            encoded_query = urllib.parse.quote(final_query)
+            search_url = f"https://www.google.com/search?q={encoded_query}"
+            
+            recon_records.append({
+                "Vector Objective": name,
+                "Risk Rating": risk,
+                "Google Dork Payload": final_query,
+                "Launch URL": search_url
+            })
+
+        df_recon = pd.DataFrame(recon_records)
+        st.dataframe(df_recon[["Vector Objective", "Risk Rating", "Google Dork Payload"]], use_container_width=True, hide_index=True)
+
+        st.markdown("### 🚀 Live Search Actions")
+        for item in recon_records:
+            st.markdown(f"- **{item['Vector Objective']}** (`{item['Risk Rating']}`): [Launch Query on Search Engine ↗]({item['Launch URL']})")
+
+    def run_crypto_analyzer(self):
+        st.title("🔐 Cryptographic Hash & Password Strength Analyzer")
+        st.markdown("Analyze entropy, compute cryptographic hashes, and validate secret keys.")
+        target_input = st.text_input("Enter Data String / Password:", type="password")
+        if target_input:
+            md5_hash = hashlib.md5(target_input.encode()).hexdigest()
+            sha256_hash = hashlib.sha256(target_input.encode()).hexdigest()
+            
+            st.text_input("MD5 Hash", value=md5_hash, disabled=True)
+            st.text_input("SHA-256 Hash", value=sha256_hash, disabled=True)
+            
+            length = len(target_input)
+            if length >= 12:
+                st.success("🟢 Strong Password Length (12+ characters)")
+            else:
+                st.warning("⚠️ Weak Password Length: Recommended minimum length is 12 characters.")
+
+    def run_threat_hunting(self):
+        st.title("🎯 Proactive Threat Hunting & IOC Analysis")
+        st.markdown("Analyze obfuscated PowerShell scripts and command line execution telemetry.")
+        script_input = st.text_area("Input PowerShell / Base64 Payload:", placeholder="Paste base64 encoded or obfuscated command line strings...")
+        if st.button("Execute Hunt Protocol"):
+            if script_input:
+                res = self.hunter.hunt_powershell_obfuscation(script_input)
+                st.json(res)
+            else:
+                st.warning("Please provide a payload to hunt.")
+
+    def run_digital_forensics(self):
+        st.title("🔎 Digital Forensics & Log Artifacts")
+        st.markdown("Extract forensic artifacts, timestamps, and indicators of compromise from raw dumps.")
+        logs_input = st.text_area("Input Raw Logs / Hex Dump:", placeholder="Paste raw event artifacts or logs here...")
+        if st.button("Extract Artifacts"):
+            if logs_input:
+                res = self.forensics.parse_text_artifacts(logs_input)
+                st.json(res)
+            else:
+                st.warning("Please provide forensic data.")
+
+    def run_incident_response(self):
+        st.title("⚡ Automated SOAR Playbooks & Ticketing")
+        st.markdown("Generate incident tickets, assign SLAs, and trigger automated response playbooks.")
+        target = st.text_input("Compromised Asset / Host ID:", placeholder="e.g., WORKSTATION-04")
+        severity = st.selectbox("Threat Severity", ["LOW", "MEDIUM", "HIGH", "CRITICAL"])
+        desc = st.text_area("Event Description / Findings:")
+        if st.button("Initialize Response Ticket"):
+            if target:
+                res = self.incident_engine.create_incident_ticket(target, severity, desc)
+                st.success(res.get("status", "Ticket generated successfully."))
+                st.json(res.get("ticket", {}))
+            else:
+                st.warning("Please specify a target asset.")
+
+    def run_vulnerability_management(self):
+        st.title("📊 Vulnerability & CVSS Assessment")
+        st.markdown("Calculate Common Vulnerability Scoring System (CVSS v3.1) metrics and remediation SLAs.")
+        score = st.slider("Select CVSS Base Score:", 0.0, 10.0, 7.5, 0.1)
+        if st.button("Calculate Vector Risk"):
+            assessment = self.vuln_mgr.calculate_cvss_score(score)
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Base CVSS Score", f"{score}/10.0")
+            c2.metric("Severity Rating", assessment.get("severity", "HIGH"))
+            c3.metric("Remediation SLA", assessment.get("sla", "7-14 Days"))
+            st.code(assessment.get("vector_string", "CVSS:3.1/..."), language="text")
+
+    def run_threat_analyzer(self):
+        st.title("🔬 Web Application Threat Analyzer")
+        st.markdown("Inspect URL query parameters and payload strings for SQLi and XSS attack signatures.")
+        payload = st.text_input("Input Parameter String:", placeholder="e.g., ?id=1' OR '1'='1 or <script>alert(1)</script>")
+        if st.button("Scan Parameter"):
+            if payload:
+                st.write("**SQL Injection Analysis:**", self.analyzer.detect_sql_injection(payload))
+                st.write("**XSS Signature Analysis:**", self.analyzer.detect_xss(payload))
+            else:
+                st.warning("Please input a parameter string.")
+
+    def run_incident_defense(self):
+        st.title("📝 Incident Defense & Evidence Ledger")
+        st.markdown("Record threat intelligence notes and commit forensic evidence to the immutable local audit trail.")
+        scam_target = st.text_input("Compromised / Malicious Asset:", placeholder="e.g., 192.168.1.100 or malware.exe")
+        evidence_notes = st.text_area("Forensic Evidence & Containment Notes:")
+        
+        if st.button("Commit to Immutable Ledger"):
+            if scam_target:
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                audit_df = pd.DataFrame({"Timestamp": [timestamp], "Target": [scam_target], "Notes": [evidence_notes], "Status": ["Secured & Logged"]})
+                
+                file_name = "incident_reports.csv"
+                if os.path.exists(file_name):
+                    audit_df.to_csv(file_name, mode='a', header=False, index=False)
+                else:
+                    audit_df.to_csv(file_name, index=False)
+                    
+                st.success("Evidence securely committed to local SIEM database ledger.")
+            else:
+                st.warning("Please specify a compromised asset.")
+
+
+# ==========================================
+# MAIN EXECUTION ROUTING (Menu Controller)
+# ==========================================
+if __name__ == "__main__":
     app = SOCDashboardUI()
     app.setup_page_config()
+    
     choice = app.render_sidebar()
-
+    
     if choice == "Overview & Dashboard":
         app.run_overview()
-    elif choice == "🤖 Autonomous AI SOC Analyst":
-        app.run_ai_soc_analyst()
     elif choice == "Global Threat Intel (VirusTotal)":
         app.run_threat_intel()
     elif choice == "AlienVault OTX Live Threat Feed":
@@ -526,7 +606,7 @@ def main():
     elif choice == "Deep Bug Bounty & Vulnerability Scanner":
         app.run_bug_bounty_scanner()
     elif choice == "OSINT & Google Dork Reconnaissance":
-        app.run_dorks_recon()
+        app.run_osint_dorks()
     elif choice == "Crypto & Password Analyzer":
         app.run_crypto_analyzer()
     elif choice == "Threat Hunting & IOCs":
@@ -536,11 +616,8 @@ def main():
     elif choice == "Incident Response & SOAR":
         app.run_incident_response()
     elif choice == "Vulnerability Management":
-        app.run_vulnerability_mgmt()
+        app.run_vulnerability_management()
     elif choice == "Web Application Threat Analyzer":
-        app.run_web_threat_analyzer()
-    else:
-        app.run_overview()
-
-if __name__ == "__main__":
-    main()
+        app.run_threat_analyzer()
+    elif choice == "Live Incident Defense & Reporting":
+        app.run_incident_defense()
