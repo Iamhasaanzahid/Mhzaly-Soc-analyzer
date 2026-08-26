@@ -1,6 +1,6 @@
-import re
-import json
 import datetime
+import json
+import re
 import urllib.parse
 
 
@@ -29,6 +29,7 @@ class AutonomousSOCAgent:
         if is_url:
             parsed = urllib.parse.urlparse(target)
             parsed_target = parsed.netloc or parsed.path
+
         suspicious_tlds = [
             ".tk",
             ".ml",
@@ -42,9 +43,10 @@ class AutonomousSOCAgent:
         ]
         if any(parsed_target.endswith(tld) for tld in suspicious_tlds):
             findings.append(
-                "Suspicious or disposable Top-Level Domain (TLD) associated with malware campaigns."
+                "Suspicious or disposable Top-Level Domain (TLD) associated with active threat campaigns."
             )
             score += self.risk_weights["suspicious_tld"]
+
         subdomains = parsed_target.split(".")
         for part in subdomains:
             if (
@@ -53,27 +55,32 @@ class AutonomousSOCAgent:
                 and bool(re.search(r"[a-z]", part))
             ):
                 findings.append(
-                    f"High-entropy subdomain pattern detected ('{part}'), potential Domain Generation Algorithm (DGA)."
+                    f"High-entropy subdomain string detected ('{part}'), potential Domain Generation Algorithm (DGA)."
                 )
                 score += self.risk_weights["entropy_high"]
                 break
+
         if is_ip:
             findings.append(
-                "Target resolved directly as raw IPv4 address without canonical hostname verification."
+                "Target is a raw IPv4 network node indicator without standard canonical domain mapping."
             )
             score += self.risk_weights["ip_format"]
+
         if score >= 60:
             severity = "CRITICAL"
-            verdict = "Malicious Indicator / Active Threat"
-            recommended_action = "Automated Firewall Block (Null-route IP / DNS Sinkhole Domain) & Trigger IR Playbook."
+            verdict = "Malicious Threat / Active Indicator"
+            recommended_action = "Execute Automated Firewall Null-Route & Trigger Emergency Incident Playbook."
         elif score >= 30:
             severity = "MEDIUM"
-            verdict = "Suspicious Posture / Needs Monitoring"
-            recommended_action = "Add to watchlist, increase SIEM log retention for endpoint connections."
+            verdict = "Suspicious Infrastructure / Watchlist"
+            recommended_action = (
+                "Add to monitoring queue and increase SIEM log retention."
+            )
         else:
             severity = "LOW / CLEAN"
-            verdict = "Benign / Normal Telemetry"
-            recommended_action = "Standard baseline telemetry monitoring."
+            verdict = "Benign / Normal Posture"
+            recommended_action = "Standard telemetry observation baseline."
+
         return {
             "agent": self.agent_name,
             "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -83,7 +90,7 @@ class AutonomousSOCAgent:
             "verdict": verdict,
             "findings": findings
             if findings
-            else ["No immediate heuristic anomalies found."],
+            else ["No heuristic threat anomalies discovered."],
             "playbook_actions": recommended_action,
         }
 
@@ -94,12 +101,14 @@ class AutonomousSOCAgent:
         total_events = len(lines)
         detected_attacks = []
         offending_ips = set()
+
         for line in lines:
             line_lower = line.lower()
             ip_match = re.search(
                 r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", line
             )
             ip = ip_match.group() if ip_match else "Unknown"
+
             if (
                 "failed" in line_lower
                 or "invalid user" in line_lower
@@ -144,13 +153,14 @@ class AutonomousSOCAgent:
             ):
                 detected_attacks.append(
                     {
-                        "type": "Command Injection / Shell Spawn",
+                        "type": "Command Injection / Malicious Shell Spawn",
                         "source": ip,
                         "raw": line,
                     }
                 )
                 if ip != "Unknown":
                     offending_ips.add(ip)
+
         risk_score = min(len(detected_attacks) * 15, 100)
         severity = (
             "CRITICAL"
@@ -168,5 +178,5 @@ class AutonomousSOCAgent:
             "severity": severity,
             "correlated_attacks": detected_attacks,
             "isolated_source_ips": list(offending_ips),
-            "automated_containment": f"Generated isolate rules for {len(offending_ips)} attacker IPs on Perimeter Gateway.",
+            "automated_containment": f"Autonomous containment rules deployed for {len(offending_ips)} attack sources.",
         }
