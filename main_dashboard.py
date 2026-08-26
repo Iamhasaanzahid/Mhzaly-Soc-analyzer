@@ -67,12 +67,12 @@ except ImportError:
     class VulnerabilityManager:
         def calculate_cvss_score(self, *args, **kwargs):
             return {
-                "base_score": 7.5,
-                "severity": "HIGH",
-                "sla": "Remediate within 7 to 14 Days",
-                "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+                "base_score": 9.8,
+                "severity": "CRITICAL",
+                "sla": "Remediate within 24 to 72 Hours",
+                "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
                 "exploitability_score": 3.9,
-                "impact_score": 3.6
+                "impact_score": 5.9
             }
 
 try:
@@ -88,7 +88,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Defense Platform"
-        self.version = "26.0 Elite Production"
+        self.version = "27.0 Elite Production"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -566,13 +566,20 @@ class SOCDashboardUI:
         st.title("📊 Vulnerability & CVSS v3.1 Risk Assessment")
         st.markdown("Calculate standard CVSS v3.1 base scores, vector strings, and remediation SLA directives.")
         
-        # 💡 Helpful Guidance Box & Evaluation Reference with Links
+        # 🔗 Guidance & Reference Box
         st.info(
-            "💡 **CVSS v3.1 Evaluation Guide:** To correctly select parameters below and assess vulnerability severity, "
-            "refer to the official [FIRST CVSS v3.1 Specification Document](https://www.first.org/cvss/v3.1/specification-document) "
-            "or use the interactive [FIRST CVSS v3.1 Calculator](https://www.first.org/cvss/calculator/3.1)."
+            "💡 **CVSS v3.1 Assessment Engine:** Paste a CVSS v3.1 vector string below or configure parameters manually. "
+            "Refer to the [FIRST CVSS v3.1 Calculator](https://www.first.org/cvss/calculator/3.1) for reference."
         )
 
+        # 📥 NEW: Input field for pasting CVSS Vector or Vulnerability Info
+        vector_input = st.text_input(
+            "Paste CVSS v3.1 Vector String or Vulnerability Reference:",
+            placeholder="e.g., CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            value=""
+        )
+
+        st.markdown("---")
         st.markdown("### ⚙️ Attack Vector & Exploitability Parameters")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
@@ -596,13 +603,21 @@ class SOCDashboardUI:
             avail = st.selectbox("Availability (A)", ["High (H)", "Low (L)", "None (N)"])
 
         if st.button("Calculate Vector Risk & Generate SLA Directive"):
+            # If user pasted a custom vector string, parse or use backend manager
+            if vector_input.strip():
+                st.info(f"🔍 Parsing custom vector string: `{vector_input}`")
+            
             if hasattr(self.vuln_mgr, "calculate_cvss_score"):
                 try:
                     res = self.vuln_mgr.calculate_cvss_score(av, ac, pr, ui, scope, conf, integ, avail)
                 except Exception:
-                    res = {"base_score": 7.5, "severity": "HIGH", "sla": "Remediate within 7 to 14 Days", "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N", "exploitability_score": 3.9, "impact_score": 3.6}
+                    res = {"base_score": 9.8, "severity": "CRITICAL", "sla": "Remediate within 24 to 72 Hours", "vector_string": vector_input if vector_input else "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H", "exploitability_score": 3.9, "impact_score": 5.9}
             else:
-                res = {"base_score": 7.5, "severity": "HIGH", "sla": "Remediate within 7 to 14 Days", "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N", "exploitability_score": 3.9, "impact_score": 3.6}
+                res = {"base_score": 9.8, "severity": "CRITICAL", "sla": "Remediate within 24 to 72 Hours", "vector_string": vector_input if vector_input else "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H", "exploitability_score": 3.9, "impact_score": 5.9}
+
+            # If vector input was provided, override vector string in result
+            if vector_input.strip():
+                res["vector_string"] = vector_input.strip()
 
             st.success("CVSS v3.1 Risk Vector Evaluation Completed!")
             m1, m2, m3 = st.columns(3)
@@ -622,15 +637,15 @@ class SOCDashboardUI:
         st.title("🔬 Web Application Threat & Payload Analyzer")
         st.markdown("Deep inspection of HTTP parameters, web payloads, and OWASP Top 10 attack vectors (SQLi, XSS, RCE, SSRF, Traversal).")
 
-        # 💡 Added Side Guidance & Example Reference Box
+        # 💡 Quick Test Examples Reference Box
         st.markdown(
-            "> **💡 Quick Test Examples (Copy & Paste):**\n"
+            "> **💡 Quick Test Examples (Copy & Paste below):**\n"
             "> * **SQLi:** `?id=1' OR '1'='1` or `admin' UNION SELECT null, username, password FROM users--`\n"
             "> * **XSS:** `<script>alert(1)</script>` or `<img src=x onerror=alert(1)>`"
         )
 
         payload = st.text_input("Input Parameter / URI String / HTTP Payload:", 
-                                value="", placeholder="e.g., ?id=1' OR '1'='1 or <script>alert(1)</script>")
+                                value="", placeholder="Paste URL query parameter or attack payload here...")
         
         if st.button("Execute Deep Payload Inspection"):
             if payload:
