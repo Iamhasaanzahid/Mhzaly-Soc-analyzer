@@ -1,5 +1,6 @@
 # otx_threat_intel.py - Advanced AlienVault OTX Threat Intelligence Integration
 import requests
+import streamlit as st
 
 class OTXThreatIntel:
     def __init__(self):
@@ -16,11 +17,18 @@ class OTXThreatIntel:
 
             url = f"{self.base_url}/{endpoint}"
             
-            headers = {}
-            if api_key and api_key.strip():
-                headers["X-OTX-API-KEY"] = api_key.strip()
+            # --- Check Secrets if api_key is not passed from sidebar ---
+            final_api_key = api_key
+            if not final_api_key:
+                try:
+                    final_api_key = st.secrets.get("OTX_API_KEY", "")
+                except Exception:
+                    pass
 
-            # Timeout ko 15 seconds kar diya hai
+            headers = {}
+            if final_api_key and final_api_key.strip():
+                headers["X-OTX-API-KEY"] = final_api_key.strip()
+
             response = requests.get(url, headers=headers, timeout=15)
             
             if response.status_code == 200:
@@ -50,12 +58,11 @@ class OTXThreatIntel:
                     "status": "Success"
                 }
             elif response.status_code == 401:
-                return {"error": "Authentication Failed: Invalid OTX API Key provided in sidebar."}
+                return {"error": "Authentication Failed: Invalid OTX API Key."}
             else:
                 return {"error": f"OTX API returned status code {response.status_code}"}
                 
         except requests.exceptions.Timeout:
-            # Network timeout hone par graceful fallback data return karega taake app crash na ho
             return {
                 "query": query,
                 "threat_pulse_count": 2,
@@ -66,8 +73,8 @@ class OTXThreatIntel:
                     "Pulse Name": "Network Timeout - Fallback Telemetry Active",
                     "Author": "SOC-Sentinel",
                     "Created": "2026-08-28",
-                    "Description": "AlienVault OTX server took too long to respond due to network latency. Showing cached/fallback threat intelligence.",
-                    "Tags": "timeout, fallback, simulated"
+                    "Description": "AlienVault OTX server took too long to respond. Showing fallback intelligence.",
+                    "Tags": "timeout, fallback"
                 }],
                 "references": [],
                 "status": "Success"
