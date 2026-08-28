@@ -1,6 +1,4 @@
-ببالکل! یہ رہا آپ کا اپڈیٹڈ main_dashboard.py کوڈ جس میں سائیڈ بار کے اندر AlienVault OTX API Key کا ان پٹ فیلڈ باقاعدہ شامل کر دیا گیا ہے۔ اب آپ اپنی OTX Key درج کر کے لائیو اور رئیل ٹائم تھریٹ انٹیلی جنس ڈیٹا فیچ کر سکتے ہیں:
 # main_dashboard.py - MHZALY Enterprise SOC & Threat Defense Platform (Elite Edition)
-
 import streamlit as st
 import pandas as pd
 import os
