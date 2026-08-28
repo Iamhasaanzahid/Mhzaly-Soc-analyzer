@@ -1,21 +1,55 @@
-import uuid
+ import uuid
 import time
 import json
 from datetime import datetime
+import sqlite3
 
 class SOARAutomation:
 
-    def __init__(self):
-        self.playbooks = {}
-        self.active_executions = {}
-        self.action_registry = {}
-        self.approval_queue = []
+    def __init__(self, db_path="soc_soar.db"):
+        self.db_path = db_path
+        self._init_db()
+
+    def _get_connection(self):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _init_db(self):
+        with self._get_connection() as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS soar_executions (
+                    execution_id TEXT PRIMARY KEY,
+                    playbook_id TEXT,
+                    alert_data TEXT,
+                    status TEXT,
+                    triggered_at TEXT
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS approval_queue (
+                    approval_id TEXT PRIMARY KEY,
+                    prompt TEXT,
+                    status TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
 
     # --- 1. Playbook Execution & Lifecycle (Real Logic) ---
     def trigger_playbook(self, playbook_id, alert_data):
         """کسی بھی سکیورٹی پلے بک کو لائیو ٹرگر کرتا ہے اور یونیک ایگزیکیوشن آئی ڈی بناتا ہے"""
         execution_id = f"EXEC-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        serialized_alert = json.dumps(alert_data) if isinstance(alert_data, dict) else str(alert_data)
+
+        with self._get_connection() as conn:
+            conn.execute(
+                "INSERT INTO soar_executions (execution_id, playbook_id, alert_data, status, triggered_at) VALUES (?, ?, ?, ?, ?)",
+                (execution_id, playbook_id, serialized_alert, "Running", timestamp)
+            )
+            conn.commit()
         
         execution_record = {
             "execution_id": execution_id,
@@ -25,13 +59,14 @@ class SOARAutomation:
             "triggered_at": timestamp
         }
         
-        self.active_executions[execution_id] = execution_record
-        return {"status": f"Playbook {playbook_id} successfully triggered.", "execution_id": execution_id, "record": execution_record}
+        return {"status": f"Playbook {playbook_id} successfully triggered and logged.", "execution_id": execution_id, "record": execution_record}
 
     def get_playbook_status(self, execution_id):
         """ایگزیکیوشن کی لائیو پروگریس چیک کرتا ہے"""
-        if execution_id in self.active_executions:
-            return {"status": "Running", "progress": "100%", "details": self.active_executions[execution_id]}
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT * FROM soar_executions WHERE execution_id = ?", (execution_id,)).fetchone()
+            if row:
+                return {"status": row["status"], "progress": "100%", "details": dict(row)}
         return {"status": "Execution ID not found."}
 
     def validate_playbook_yaml(self, yaml_content):
@@ -64,9 +99,14 @@ class SOARAutomation:
     def request_analyst_approval(self, prompt_text, timeout_seconds=300):
         """کسی بڑے ایکشن سے پہلے سکیورٹی اینالسٹ کی منظوری کے لیے کیو بناتا ہے"""
         approval_id = str(uuid.uuid4())[:8]
-        req = {"approval_id": approval_id, "prompt": prompt_text, "status": "Pending Approval"}
-        self.approval_queue.append(req)
-        return {"status": "Approval request queued. Waiting for analyst confirmation.", "approval_id": approval_id}
+        with self._get_connection() as conn:
+            conn.execute(
+                "INSERT INTO approval_queue (approval_id, prompt, status) VALUES (?, ?, ?)",
+                (approval_id, prompt_text, "Pending Approval")
+            )
+            conn.commit()
+
+        return {"status": "Approval request queued securely in database.", "approval_id": approval_id}
 
     # --- 5. SOAR Workflow Orchestration & Analytics ---
     def calculate_automated_roi_hours_saved(self, playbook_id):
@@ -80,9 +120,13 @@ class SOARAutomation:
 
     def export_soar_metrics_json(self):
         """SOAR کے تمام پرفارمنس میٹرکس ایکسپورٹ کرتا ہے"""
+        with self._get_connection() as conn:
+            active_count = conn.execute("SELECT COUNT(*) FROM soar_executions WHERE status = 'Running'").fetchone()[0]
+            pending_count = conn.execute("SELECT COUNT(*) FROM approval_queue WHERE status = 'Pending Approval'").fetchone()[0]
+            
         metrics = {
-            "total_active_executions": len(self.active_executions),
-            "pending_approvals": len(self.approval_queue),
+            "total_active_executions": active_count,
+            "pending_approvals": pending_count,
             "system_status": "Operational"
         }
-        return {"status": "SOAR performance and efficiency metrics exported.", "metrics": metrics}
+        return {"status": "SOAR performance and efficiency metrics exported from database.", "metrics": metrics}
