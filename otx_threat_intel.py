@@ -1,10 +1,43 @@
 # otx_threat_intel.py - Advanced AlienVault OTX Threat Intelligence Integration
 import requests
 import streamlit as st
+import sqlite3
+import json
 
 class OTXThreatIntel:
-    def __init__(self):
+    def __init__(self, db_path="soc_otx.db"):
         self.base_url = "https://otx.alienvault.com/api/v1/indicators"
+        self.db_path = db_path
+        self._init_db()
+
+    def _get_connection(self):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _init_db(self):
+        with self._get_connection() as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS otx_cache (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    indicator_type TEXT,
+                    query TEXT,
+                    pulse_count INTEGER,
+                    country TEXT,
+                    asn TEXT,
+                    raw_result TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
+
+    def _log_to_db(self, indicator_type, query, count, country, asn, result_dict):
+        with self._get_connection() as conn:
+            conn.execute(
+                "INSERT INTO otx_cache (indicator_type, query, pulse_count, country, asn, raw_result) VALUES (?, ?, ?, ?, ?, ?)",
+                (indicator_type, query, count, country, asn, json.dumps(result_dict))
+            )
+            conn.commit()
 
     def check_indicator(self, indicator_type, query, api_key=""):
         try:
@@ -17,7 +50,6 @@ class OTXThreatIntel:
 
             url = f"{self.base_url}/{endpoint}"
             
-            # --- Check Secrets if api_key is not passed from sidebar ---
             final_api_key = api_key
             if not final_api_key:
                 try:
@@ -47,7 +79,7 @@ class OTXThreatIntel:
                         "Tags": ", ".join(p.get("tags", []))
                     })
 
-                return {
+                result = {
                     "query": query,
                     "threat_pulse_count": count,
                     "country": data.get("country_name", "N/A"),
@@ -57,6 +89,11 @@ class OTXThreatIntel:
                     "references": pulse_info.get("references", []),
                     "status": "Success"
                 }
+
+                # Log successful query into SQLite cache
+                self._log_to_db(indicator_type, query, count, result["country"], result["asn"], result)
+                return result
+
             elif response.status_code == 401:
                 return {"error": "Authentication Failed: Invalid OTX API Key."}
             else:
