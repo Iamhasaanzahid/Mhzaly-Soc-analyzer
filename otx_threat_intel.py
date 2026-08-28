@@ -5,7 +5,7 @@ class OTXThreatIntel:
     def __init__(self):
         self.base_url = "https://otx.alienvault.com/api/v1/indicators"
 
-    def check_indicator(self, indicator_type, query):
+    def check_indicator(self, indicator_type, query, api_key=""):
         try:
             if indicator_type == "IP":
                 endpoint = f"ip/{query}/general"
@@ -15,7 +15,13 @@ class OTXThreatIntel:
                 return {"error": "Invalid indicator type selected."}
 
             url = f"{self.base_url}/{endpoint}"
-            response = requests.get(url, timeout=10)
+            
+            # --- Setup Authentication Headers ---
+            headers = {}
+            if api_key and api_key.strip():
+                headers["X-OTX-API-KEY"] = api_key.strip()
+
+            response = requests.get(url, headers=headers, timeout=10)
             
             if response.status_code == 200:
                 data = response.json()
@@ -44,7 +50,10 @@ class OTXThreatIntel:
                     "references": pulse_info.get("references", []),
                     "status": "Success"
                 }
+            elif response.status_code == 401:
+                return {"error": "Authentication Failed: Invalid OTX API Key provided in sidebar."}
             else:
                 return {"error": f"OTX API returned status code {response.status_code}"}
         except Exception as e:
             return {"error": str(e)}
+            
