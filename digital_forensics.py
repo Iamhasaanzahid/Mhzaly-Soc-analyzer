@@ -1,16 +1,15 @@
-# digital_forensics.py - Advanced Digital Forensics & Log Artifact Extraction Engine
-
 import hashlib
 import os
 from datetime import datetime
 import re
+import sqlite3
+import json
 
 class DigitalForensicsAnalyzer:
 
-    def __init__(self):
-        self.evidence_vault = {}
-        self.chain_of_custody = []
-        self.timeline_events = []
+    def __init__(self, db_path="soc_forensics.db"):
+        self.db_path = db_path
+        self._init_db()
         
         # Comprehensive regex patterns for full forensic artifact extraction
         self.patterns = {
@@ -22,16 +21,42 @@ class DigitalForensicsAnalyzer:
             "Windows File Path": r"[A-Za-z]:\\(?:[A-Za-z0-9_\-\s]+\\)*[A-Za-z0-9_\-\.]+"
         }
 
+    def _get_connection(self):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _init_db(self):
+        with self._get_connection() as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS chain_of_custody (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    evidence_id TEXT,
+                    source TEXT,
+                    description TEXT,
+                    handler TEXT,
+                    action TEXT,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
+
     # --- 1. Evidence Handling & Chain of Custody ---
     def acquire_evidence(self, evidence_id, source, description):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with self._get_connection() as conn:
+            conn.execute(
+                "INSERT INTO chain_of_custody (evidence_id, source, description, handler, action, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
+                (evidence_id, source, description, "System Root", "Acquired", timestamp)
+            )
+            conn.commit()
+            
         record = {
             "evidence_id": evidence_id,
             "source": source,
             "description": description,
             "timestamp": timestamp
         }
-        self.chain_of_custody.append(record)
         return {"status": f"Evidence {evidence_id} acquired successfully from {source}.", "record": record}
 
     def generate_sha256_hash(self, file_bytes):
@@ -52,13 +77,14 @@ class DigitalForensicsAnalyzer:
             return {"status": "WARNING: Hash mismatch! Evidence may have been tampered with."}
 
     def log_chain_of_custody(self, evidence_id, handler_name, action):
-        entry = {
-            "evidence_id": evidence_id,
-            "handler": handler_name,
-            "action": action,
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        self.chain_of_custody.append(entry)
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with self._get_connection() as conn:
+            conn.execute(
+                "INSERT INTO chain_of_custody (evidence_id, source, description, handler, action, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
+                (evidence_id, "N/A", "Chain update", handler_name, action, timestamp)
+            )
+            conn.commit()
+            
         return {"status": f"Chain of custody updated for {evidence_id} by {handler_name}."}
 
     # --- 2. Text & Log Artifact Parsing (Deep Multi-Category Extraction) ---
@@ -79,7 +105,6 @@ class DigitalForensicsAnalyzer:
             "status": "Artifacts successfully extracted from text/logs.",
             "total_artifacts": total_extracted,
             "artifacts": artifacts,
-            # Backward compatibility keys for older dashboard calls
             "ips": artifacts.get("IPv4 Address", []),
             "emails": artifacts.get("Email Address", [])
         }
@@ -92,8 +117,12 @@ class DigitalForensicsAnalyzer:
         return {"status": "Chrome SQLite history parsing interface ready."}
 
     def generate_forensic_report(self):
+        with self._get_connection() as conn:
+            rows = conn.execute("SELECT * FROM chain_of_custody").fetchall()
+            total_records = len(rows)
+            
         return {
             "status": "Comprehensive digital forensics report generated.",
-            "total_chain_records": len(self.chain_of_custody),
+            "total_chain_records": total_records,
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
