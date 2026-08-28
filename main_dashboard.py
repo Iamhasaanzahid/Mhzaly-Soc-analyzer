@@ -251,13 +251,13 @@ class SOCDashboardUI:
         
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Engines", "12 Active", "Operational")
+            st.metric("Active Defense Engines", "12 Modules", "Operational")
         with col2:
-            st.metric("Posture", "Protected", "Secure")
+            st.metric("SOC Posture", "Protected", "Secure")
         with col3:
-            st.metric("Version", "v33.0", "Stable")
+            st.metric("Platform Version", self.version, "Stable")
         with col4:
-            st.metric("Architect", "Hassaan", "ROOT")
+            st.metric("Lead SOC Engineer", "M. Hassaan Zahid", "Access: ROOT")
 
         st.markdown("---")
         st.markdown("### 📡 Live Incident Event Log (SIEM Database)")
@@ -499,7 +499,7 @@ class SOCDashboardUI:
     def run_incident_defense(self):
         st.title("📝 Incident Defense & Evidence Ledger")
         scam_target = st.text_input("Compromised / Malicious Asset:", placeholder="e.g., 192.168.1.100")
-        investigator = st.text_input("Lead Investigator:", value="Muhammad Hassaan Zahid (Root Analyst)")
+        investigator = st.text_input("Lead Investigator:", value="M. Hassaan Zahid (Root Analyst)")
         evidence_notes = st.text_area("Comprehensive Forensic Investigation Notes & Triage Summary:", height=150)
         action_status = st.selectbox("Current Incident Status", ["Contained & Remediation Complete", "Active Triage / Investigation", "Escalated to Tier-3", "False Positive"])
         
