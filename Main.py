@@ -1,4 +1,5 @@
 # main_dashboard.py - MHZALY Enterprise SOC & Threat Defense Platform (Elite Edition)
+
 import streamlit as st
 import pandas as pd
 import os
@@ -113,7 +114,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Defense Platform"
-        self.version = "34.0 OTX Integrated Elite Suite"
+        self.version = "35.0 Full Production Elite Suite"
         
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -223,7 +224,7 @@ class SOCDashboardUI:
             """
             <div style='text-align: center; padding: 10px 0;'>
                 <h2 style='margin:0; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;'>🛡️ MHZALY SOC</h2>
-                <span style='display:inline-block; margin-top:4px; padding:2px 10px; font-size:10px; font-weight:700; background:rgba(0,242,254,0.12); border:1px solid #00f2fe; color:#00f2fe; border-radius:12px;'>OTX INTEGRATED SUITE</span>
+                <span style='display:inline-block; margin-top:4px; padding:2px 10px; font-size:10px; font-weight:700; background:rgba(0,242,254,0.12); border:1px solid #00f2fe; color:#00f2fe; border-radius:12px;'>ELITE PRO SUITE</span>
             </div>
             """, 
             unsafe_allow_html=True
@@ -231,9 +232,9 @@ class SOCDashboardUI:
         st.sidebar.markdown(f"<p style='text-align:center; color:#64748b !important; font-size:11px; margin-top:5px;'>Version: {self.version}</p>", unsafe_allow_html=True)
         st.sidebar.markdown("---")
         
-        # --- API Key Integration in Sidebar ---
+        # --- Sidebar API Configuration ---
         st.sidebar.markdown("### 🔑 API Configuration")
-        otx_api_key = st.sidebar.text_input("AlienVault OTX API Key", type="password", placeholder="Enter OTX key...")
+        otx_key_input = st.sidebar.text_input("AlienVault OTX API Key", type="password", placeholder="Enter key...")
         st.sidebar.markdown("---")
         
         menu_choice = st.sidebar.radio("Navigation Menu", [
@@ -251,7 +252,7 @@ class SOCDashboardUI:
             "Web Application Threat Analyzer",
             "Live Incident Defense & Reporting"
         ])
-        return menu_choice, otx_api_key
+        return menu_choice, otx_key_input
 
     def run_overview(self):
         st.title("🛡️ MHZALY Enterprise SOC Command Center")
@@ -338,9 +339,9 @@ class SOCDashboardUI:
         st.markdown("Query global open-source threat telemetry, adversary campaigns, and active threat pulses.")
         
         if otx_api_key:
-            st.success("🔑 OTX API Key detected in sidebar. Live queries enabled!")
+            st.success("🔑 OTX API Key active in session.")
         else:
-            st.info("ℹ️ Running in fallback mode. Enter your OTX API Key in the sidebar for live community queries.")
+            st.info("ℹ️ Running in default mode. Enter your OTX API Key in the sidebar for authenticated queries.")
         
         st.markdown(
             "> **💡 Testing Examples (Copy & Paste below):**\n"
@@ -357,7 +358,6 @@ class SOCDashboardUI:
         if st.button("Query OTX Telemetry"):
             if query_target:
                 with st.spinner("Fetching global community threat pulses from OTX..."):
-                    # Pass the sidebar API key to the OTX processor
                     res = self.otx_processor.check_indicator(indicator_type, query_target, api_key=otx_api_key)
                     if "error" in res:
                         st.error(res["error"])
@@ -801,4 +801,3 @@ if __name__ == "__main__":
         app.run_threat_analyzer()
     elif choice == "Live Incident Defense & Reporting":
         app.run_incident_defense()
-
