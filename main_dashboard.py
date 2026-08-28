@@ -56,11 +56,7 @@ except ImportError:
                 }
             }
 
-try:
-    from soar_automation import SOARAutomation
-except ImportError:
-    class SOARAutomation:
-        pass
+from soar_automation import SOARAutomation
 
 try:
     from threat_hunting import ThreatHunter
