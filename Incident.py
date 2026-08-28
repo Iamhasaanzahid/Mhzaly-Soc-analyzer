@@ -1,152 +1,164 @@
+import sqlite3
+from datetime import datetime
+
 class IncidentResponse:
-    def __init__(self):
-        self.incidents = []
+    def __init__(self, db_path="soc_incidents.db"):
+        self.db_path = db_path
+        self._init_db()
+
+    def _get_connection(self):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _init_db(self):
+        with self._get_connection() as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS incidents (
+                    id TEXT PRIMARY KEY,
+                    severity TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    status TEXT DEFAULT 'Open',
+                    assignee TEXT,
+                    notes TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
 
     def log_incident(self, incident_id, severity, description):
-        self.incidents.append({
-            "id": incident_id,
-            "severity": severity,
-            "description": description,
-            "status": "Open",
-            "assignee": None,
-            "notes": []
-        })
-        print(f"Incident {incident_id} logged.")
+        with self._get_connection() as conn:
+            try:
+                conn.execute(
+                    "INSERT INTO incidents (id, severity, description, status, notes) VALUES (?, ?, ?, ?, ?)",
+                    (incident_id, severity, description, "Open", "")
+                )
+                conn.commit()
+                return {"status": "Success", "message": f"Incident {incident_id} logged successfully."}
+            except sqlite3.IntegrityError:
+                return {"status": "Error", "message": f"Incident ID {incident_id} already exists."}
 
     def update_status(self, incident_id, new_status):
-        for incident in self.incidents:
-            if incident['id'] == incident_id:
-                incident['status'] = new_status
-                print(f"Status for incident {incident_id} updated to {new_status}.")
-                break
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE incidents SET status = ? WHERE id = ?", (new_status, incident_id))
+            conn.commit()
+            return cursor.rowcount > 0
 
     def assign_to_analyst(self, incident_id, analyst_name):
-        for incident in self.incidents:
-            if incident['id'] == incident_id:
-                incident['assignee'] = analyst_name
-                print(f"Incident {incident_id} assigned to {analyst_name}.")
-                break
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE incidents SET assignee = ? WHERE id = ?", (analyst_name, incident_id))
+            conn.commit()
+            return cursor.rowcount > 0
 
     def get_incident(self, incident_id):
-        for incident in self.incidents:
-            if incident['id'] == incident_id:
-                return incident
-        return None
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT * FROM incidents WHERE id = ?", (incident_id,)).fetchone()
+            return dict(row) if row else None
 
     def add_note(self, incident_id, note):
-        for incident in self.incidents:
-            if incident['id'] == incident_id:
-                incident['notes'].append(note)
-                print(f"Note added to {incident_id}.")
-                break
+        inc = self.get_incident(incident_id)
+        if inc:
+            current_notes = inc.get("notes", "") or ""
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            updated_notes = f"{current_notes}\n[{timestamp}] {note}".strip()
+            with self._get_connection() as conn:
+                conn.execute("UPDATE incidents SET notes = ? WHERE id = ?", (updated_notes, incident_id))
+                conn.commit()
+            return True
+        return False
 
     def close_incident(self, incident_id):
-        self.update_status(incident_id, "Closed")
+        return self.update_status(incident_id, "Closed")
 
     def escalate_incident(self, incident_id):
-        self.update_status(incident_id, "Escalated")
+        return self.update_status(incident_id, "Escalated")
 
     def reopen_incident(self, incident_id):
-        self.update_status(incident_id, "Reopened")
+        return self.update_status(incident_id, "Reopened")
 
     def get_open_incidents(self):
-        return [inc for inc in self.incidents if inc['status'] == "Open"]
+        with self._get_connection() as conn:
+            rows = conn.execute("SELECT * FROM incidents WHERE status = 'Open'").fetchall()
+            return [dict(row) for row in rows]
 
     def get_incidents_by_severity(self, severity):
-        return [inc for inc in self.incidents if inc['severity'] == severity]
+        with self._get_connection() as conn:
+            rows = conn.execute("SELECT * FROM incidents WHERE severity = ?", (severity,)).fetchall()
+            return [dict(row) for row in rows]
 
     def delete_incident(self, incident_id):
-        self.incidents = [inc for inc in self.incidents if inc['id'] != incident_id]
-        print(f"Incident {incident_id} deleted.")
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM incidents WHERE id = ?", (incident_id,))
+            conn.commit()
+            return cursor.rowcount > 0
 
     def clear_incident_log(self):
-        self.incidents = []
-        print("Incident log cleared.")
+        with self._get_connection() as conn:
+            conn.execute("DELETE FROM incidents")
+            conn.commit()
 
     def get_incident_count(self):
-        return len(self.incidents)
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT COUNT(*) as count FROM incidents").fetchone()
+            return row["count"] if row else 0
 
     def incident_exists(self, incident_id):
-        return any(inc['id'] == incident_id for inc in self.incidents)
+        return self.get_incident(incident_id) is not None
 
     def search_incidents(self, keyword):
-        return [inc for inc in self.incidents if keyword.lower() in inc['description'].lower()]
+        with self._get_connection() as conn:
+            rows = conn.execute("SELECT * FROM incidents WHERE description LIKE ?", (f"%{keyword}%",)).fetchall()
+            return [dict(row) for row in rows]
 
     def list_all_assignees(self):
-        return list(set(inc['assignee'] for inc in self.incidents if inc['assignee']))
+        with self._get_connection() as conn:
+            rows = conn.execute("SELECT DISTINCT assignee FROM incidents WHERE assignee IS NOT NULL").fetchall()
+            return [row["assignee"] for row in rows]
 
     def count_by_status(self, status):
-        return len([inc for inc in self.incidents if inc['status'] == status])
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT COUNT(*) as count FROM incidents WHERE status = ?", (status,)).fetchone()
+            return row["count"] if row else 0
 
     def update_severity(self, incident_id, new_severity):
-        for incident in self.incidents:
-            if incident['id'] == incident_id:
-                incident['severity'] = new_severity
-                print(f"Severity for {incident_id} updated to {new_severity}.")
-                break
-
-    def get_incident_age(self):
-        return "Age tracking not implemented yet."
-
-    def set_sla_deadline(self, incident_id, deadline):
-        pass
-
-    def check_sla_breach(self, incident_id):
-        pass
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE incidents SET severity = ? WHERE id = ?", (new_severity, incident_id))
+            conn.commit()
+            return cursor.rowcount > 0
 
     def export_incidents(self):
-        return self.incidents
+        with self._get_connection() as conn:
+            rows = conn.execute("SELECT * FROM incidents").fetchall()
+            return [dict(row) for row in rows]
 
     def get_latest_incident(self):
-        return self.incidents[-1] if self.incidents else None
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT * FROM incidents ORDER BY created_at DESC LIMIT 1").fetchone()
+            return dict(row) if row else None
 
     def get_oldest_incident(self):
-        return self.incidents[0] if self.incidents else None
-
-    def reverse_incident_log(self):
-        self.incidents.reverse()
-
-    def add_tag(self, incident_id, tag):
-        pass
-
-    def remove_tag(self, incident_id, tag):
-        pass
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT * FROM incidents ORDER BY created_at ASC LIMIT 1").fetchone()
+            return dict(row) if row else None
 
     def get_incidents_by_assignee(self, analyst_name):
-        return [inc for inc in self.incidents if inc['assignee'] == analyst_name]
-
-    def toggle_incident_lock(self, incident_id):
-        pass
-
-    def merge_incidents(self, incident_id1, incident_id2):
-        pass
-
-    def generate_incident_report(self, incident_id):
-        pass
+        with self._get_connection() as conn:
+            rows = conn.execute("SELECT * FROM incidents WHERE assignee = ?", (analyst_name,)).fetchall()
+            return [dict(row) for row in rows]
 
     def get_unique_severities(self):
-        return list(set(inc['severity'] for inc in self.incidents))
-
-    def filter_by_date_range(self, start_date, end_date):
-        pass
-
-    def bulk_close_incidents(self, status):
-        pass
+        with self._get_connection() as conn:
+            rows = conn.execute("SELECT DISTINCT severity FROM incidents").fetchall()
+            return [row["severity"] for row in rows]
 
     def get_critical_incidents(self):
         return self.get_incidents_by_severity("Critical")
 
-    def get_incident_history(self, incident_id):
-        pass
-
-    def update_priority(self, incident_id, priority):
-        pass
-
-    def close_all_incidents(self):
-        pass
-
     def get_closed_incidents(self):
-        return [inc for inc in self.incidents if inc['status'] == "Closed"]
-
-    def search_incidents_by_assignee(self, analyst_name):
-        pass
+        with self._get_connection() as conn:
+            rows = conn.execute("SELECT * FROM incidents WHERE status = 'Closed'").fetchall()
+            return [dict(row) for row in rows]
