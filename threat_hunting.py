@@ -4,14 +4,14 @@ import uuid
 import re
 import base64
 from datetime import datetime
+import sqlite3
+import json
 
 class ThreatHunter:
 
-    def __init__(self):
-        self.active_hunts = {}
-        self.hunt_hypotheses = []
-        self.indicators_of_compromise = []
-        self.hunt_results = []
+    def __init__(self, db_path="soc_threat_hunting.db"):
+        self.db_path = db_path
+        self._init_db()
         
         # Comprehensive evasion & obfuscation detection patterns
         self.suspicious_patterns = {
@@ -22,12 +22,54 @@ class ThreatHunter:
             "Execution Policy / AMSI Bypass": r"bypass|-exec\s+bypass|rundll32|regsvr32"
         }
 
+    def _get_connection(self):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _init_db(self):
+        with self._get_connection() as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS hunt_campaigns (
+                    hunt_id TEXT PRIMARY KEY,
+                    campaign_name TEXT,
+                    description TEXT,
+                    status TEXT,
+                    created_at TEXT
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS hunt_hypotheses (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    hunt_id TEXT,
+                    hypothesis TEXT,
+                    timestamp TEXT
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS hunt_scans (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    severity TEXT,
+                    risk_score INTEGER,
+                    findings TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
+
     # --- 1. Hunt Planning & Hypothesis Generation ---
     def create_hunt_campaign(self, campaign_name, description):
-        """ایک نئی تھریٹ ہنٹنگ کمپین اور یونیک آئی ڈی بناتا ہے"""
+        """ایک نئی تھریٹ ہنٹنگ کمپین اور یونیک آئی ڈی بناتا ہے اور ڈیٹا بیس میں سیو کرتا ہے"""
         hunt_id = f"HUNT-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
+        with self._get_connection() as conn:
+            conn.execute(
+                "INSERT INTO hunt_campaigns (hunt_id, campaign_name, description, status, created_at) VALUES (?, ?, ?, ?, ?)",
+                (hunt_id, campaign_name, description, "Active Hunt", timestamp)
+            )
+            conn.commit()
+
         campaign = {
             "hunt_id": hunt_id,
             "campaign_name": campaign_name,
@@ -36,18 +78,24 @@ class ThreatHunter:
             "created_at": timestamp
         }
         
-        self.active_hunts[hunt_id] = campaign
-        return {"status": f"Hunt campaign '{campaign_name}' created successfully.", "hunt_id": hunt_id, "campaign": campaign}
+        return {"status": f"Hunt campaign '{campaign_name}' created and saved successfully.", "hunt_id": hunt_id, "campaign": campaign}
 
     def define_hypothesis(self, hunt_id, hypothesis_statement):
-        """کمپین کے لیے ہائپوتھیسس (فرضہ) سیٹ کرتا ہے"""
+        """کمپین کے لیے ہائپوتھیسس (فرضہ) سیٹ کرتا ہے اور ڈیٹا بیس میں درج کرتا ہے"""
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with self._get_connection() as conn:
+            conn.execute(
+                "INSERT INTO hunt_hypotheses (hunt_id, hypothesis, timestamp) VALUES (?, ?, ?)",
+                (hunt_id, hypothesis_statement, timestamp)
+            )
+            conn.commit()
+
         hypothesis = {
             "hunt_id": hunt_id,
             "hypothesis": hypothesis_statement,
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "timestamp": timestamp
         }
-        self.hunt_hypotheses.append(hypothesis)
-        return {"status": "Hypothesis defined and attached to hunt successfully.", "hypothesis": hypothesis}
+        return {"status": "Hypothesis defined and persisted securely in database.", "hypothesis": hypothesis}
 
     # --- 2. Advanced Endpoint & PowerShell Threat Hunting (Deep Deobfuscation) ---
     def hunt_powershell_obfuscation(self, script_content):
@@ -74,9 +122,7 @@ class ThreatHunter:
         b64_matches = re.findall(r'[A-Za-z0-9+/=]{16,}', script_content)
         for chunk in b64_matches:
             try:
-                # Try standard UTF-8 decode
                 decoded = base64.b64decode(chunk).decode('utf-8', errors='ignore')
-                # Try UTF-16LE decode if output contains non-printable artifacts
                 if not decoded.isprintable() or len(decoded.strip()) < 3:
                     decoded = base64.b64decode(chunk).decode('utf-16le', errors='ignore')
                 
@@ -96,10 +142,20 @@ class ThreatHunter:
         if risk_score >= 50 or decoded_strings:
             severity = "HIGH THREAT" if risk_score >= 50 else "SUSPICIOUS"
 
+        final_risk = min(risk_score, 100)
+
+        # Log scan into database
+        with self._get_connection() as conn:
+            conn.execute(
+                "INSERT INTO hunt_scans (severity, risk_score, findings) VALUES (?, ?, ?)",
+                (severity, final_risk, json.dumps(findings))
+            )
+            conn.commit()
+
         return {
-            "status": "Analysis Complete",
+            "status": "Analysis Complete & Logged to DB",
             "severity": severity,
-            "risk_score": min(risk_score, 100),
+            "risk_score": final_risk,
             "findings": findings,
             "decoded_payloads": decoded_strings,
             "iocs": {
@@ -128,7 +184,7 @@ class ThreatHunter:
             "T1027": "Obfuscated Files or Information",
             "T1105": "Ingress Tool Transfer"
         }
-        technique_name = mitre_mapping.get(technique_id, "Unknown Technique")
+        technique_name = mitre_mapping.get(technique_id.upper(), "Unknown Technique")
         return {
             "status": "Mapped hunt findings to MITRE ATT&CK.",
             "technique_id": technique_id,
@@ -137,12 +193,15 @@ class ThreatHunter:
 
     # --- 4. Hunt Conclusion & Reporting ---
     def generate_hunt_report(self, hunt_id):
-        """تھریٹ ہنٹ کا تفصیلی رپورٹ ڈیٹا تیار کرتا ہے"""
-        if hunt_id in self.active_hunts:
-            camp = self.active_hunts[hunt_id]
-            return {
-                "status": "Comprehensive threat hunt report generated.",
-                "campaign_details": camp,
-                "total_hypotheses": len(self.hunt_hypotheses)
-            }
-        return {"status": "Hunt campaign not found."}
+        """تھریٹ ہنٹ کا تفصیلی رپورٹ ڈیٹا ڈیٹا بیس سے تیار کرتا ہے"""
+        with self._get_connection() as conn:
+            camp_row = conn.execute("SELECT * FROM hunt_campaigns WHERE hunt_id = ?", (hunt_id,)).fetchone()
+            hyp_count = conn.execute("SELECT COUNT(*) FROM hunt_hypotheses WHERE hunt_id = ?", (hunt_id,)).fetchone()[0]
+            
+            if camp_row:
+                return {
+                    "status": "Comprehensive threat hunt report generated from database.",
+                    "campaign_details": dict(camp_row),
+                    "total_hypotheses": hyp_count
+                }
+        return {"status": "Hunt campaign not found in database."}
