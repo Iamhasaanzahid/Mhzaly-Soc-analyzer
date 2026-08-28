@@ -1,4 +1,4 @@
- import uuid
+import uuid
 import time
 import json
 from datetime import datetime
@@ -38,7 +38,6 @@ class SOARAutomation:
 
     # --- 1. Playbook Execution & Lifecycle (Real Logic) ---
     def trigger_playbook(self, playbook_id, alert_data):
-        """کسی بھی سکیورٹی پلے بک کو لائیو ٹرگر کرتا ہے اور یونیک ایگزیکیوشن آئی ڈی بناتا ہے"""
         execution_id = f"EXEC-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
@@ -62,7 +61,6 @@ class SOARAutomation:
         return {"status": f"Playbook {playbook_id} successfully triggered and logged.", "execution_id": execution_id, "record": execution_record}
 
     def get_playbook_status(self, execution_id):
-        """ایگزیکیوشن کی لائیو پروگریس چیک کرتا ہے"""
         with self._get_connection() as conn:
             row = conn.execute("SELECT * FROM soar_executions WHERE execution_id = ?", (execution_id,)).fetchone()
             if row:
@@ -70,14 +68,12 @@ class SOARAutomation:
         return {"status": "Execution ID not found."}
 
     def validate_playbook_yaml(self, yaml_content):
-        """پلے بک کے سکیما کو ویلیڈیٹ کرتا ہے"""
         if "name:" in yaml_content or "steps:" in yaml_content:
             return {"status": "Playbook YAML schema validated successfully."}
         return {"status": "Error: Invalid YAML format or missing required keys."}
 
     # --- 2. Automated Enrichment & Context Gathering ---
     def auto_enrich_ip_reputation(self, ip_address):
-        """آئی پی ایڈریس کی آٹومیٹڈ ریپوٹیشن چیک کرتا ہے"""
         return {
             "status": f"Reputation score pulled for {ip_address}.",
             "ip": ip_address,
@@ -87,17 +83,14 @@ class SOARAutomation:
 
     # --- 3. Automated Containment & Active Defense ---
     def auto_block_ip_palo_alto(self, ip_address):
-        """پالو آلٹو فائر وال پر آئی پی بلاک کرنے کی کمانڈ جنریٹ کرتا ہے"""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         return {"status": f"Success: IP {ip_address} pushed to Palo Alto DBL at {timestamp}."}
 
     def auto_isolate_crowdstrike_agent(self, agent_id):
-        """کراؤڈ سٹرائیک ایجنٹ کے ذریعے ہوسٹ کو نیٹ ورک سے الگ کرتا ہے"""
         return {"status": f"CRITICAL: CrowdStrike Falcon agent {agent_id} network-contained successfully."}
 
     # --- 4. ChatOps & Collaborative Automation ---
     def request_analyst_approval(self, prompt_text, timeout_seconds=300):
-        """کسی بڑے ایکشن سے پہلے سکیورٹی اینالسٹ کی منظوری کے لیے کیو بناتا ہے"""
         approval_id = str(uuid.uuid4())[:8]
         with self._get_connection() as conn:
             conn.execute(
@@ -110,7 +103,6 @@ class SOARAutomation:
 
     # --- 5. SOAR Workflow Orchestration & Analytics ---
     def calculate_automated_roi_hours_saved(self, playbook_id):
-        """آٹومیشن کی وجہ سے بچنے والے وقت اور کارکردگی کا حساب لگاتا ہے"""
         return {
             "status": "ROI calculated successfully.",
             "playbook_id": playbook_id,
@@ -119,7 +111,6 @@ class SOARAutomation:
         }
 
     def export_soar_metrics_json(self):
-        """SOAR کے تمام پرفارمنس میٹرکس ایکسپورٹ کرتا ہے"""
         with self._get_connection() as conn:
             active_count = conn.execute("SELECT COUNT(*) FROM soar_executions WHERE status = 'Running'").fetchone()[0]
             pending_count = conn.execute("SELECT COUNT(*) FROM approval_queue WHERE status = 'Pending Approval'").fetchone()[0]
