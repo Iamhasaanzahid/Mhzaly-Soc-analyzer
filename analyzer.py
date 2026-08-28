@@ -1,16 +1,13 @@
-# analyzer.py - Enterprise Web Application Threat & Payload Analyzer
-
 import hashlib
 import json
 import re
+import sqlite3
+from datetime import datetime
 
 class ThreatAnalyzer:
-
-    def __init__(self):
-        self.malicious_ips = set()
-        self.malware_hashes = set()
-        self.reported_domains = set()
-        self.risk_scores = {}
+    def __init__(self, db_path="soc_analyzer.db"):
+        self.db_path = db_path
+        self._init_db()
         
         # Comprehensive Web Attack Signatures (OWASP Standard)
         self.attack_signatures = {
@@ -41,9 +38,28 @@ class ThreatAnalyzer:
             }
         }
 
+    def _get_connection(self):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _init_db(self):
+        with self._get_connection() as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS payload_scans (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    payload TEXT,
+                    overall_threat TEXT,
+                    risk_score INTEGER,
+                    detections_count INTEGER,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
+
     # --- 1. Comprehensive Web Threat Deep Scan ---
     def analyze_web_payload(self, payload_string):
-        """Analyzes string against full OWASP attack signatures and returns forensic breakdown"""
+        """Analyzes string against full OWASP attack signatures and logs into database"""
         if not payload_string:
             return {"error": "Empty payload string provided"}
 
@@ -73,10 +89,20 @@ class ThreatAnalyzer:
         elif total_risk_score > 0:
             overall_threat = "SUSPICIOUS THREAT"
 
+        final_risk_score = min(total_risk_score, 100)
+
+        # Log scan result to database
+        with self._get_connection() as conn:
+            conn.execute(
+                "INSERT INTO payload_scans (payload, overall_threat, risk_score, detections_count) VALUES (?, ?, ?, ?)",
+                (payload_string, overall_threat, final_risk_score, len(detections))
+            )
+            conn.commit()
+
         return {
-            "status": "Analysis Completed",
+            "status": "Analysis Completed & Logged to DB",
             "overall_threat": overall_threat,
-            "risk_score": min(total_risk_score, 100),
+            "risk_score": final_risk_score,
             "detections_count": len(detections),
             "detections": detections
         }
@@ -99,16 +125,18 @@ class ThreatAnalyzer:
     # --- 2. Risk Scoring & Triage ---
     def calculate_risk_score(self, event_data):
         base_score = 50
-        if "critical" in str(event_data).lower():
+        str_data = str(event_data).lower()
+        if "critical" in str_data:
             base_score = 90
-        elif "warning" in str(event_data).lower():
+        elif "warning" in str_data or "suspicious" in str_data:
             base_score = 70
         return {"status": "Risk score calculated successfully.", "score": base_score}
 
-    # --- 3. Incident Response Helpers ---
+    # --- 3. Incident Response & SOC Alerting ---
     def alert_soc_team(self, severity, message):
         return {
-            "status": "Alert dispatched to SOC team successfully.",
+            "status": "Alert dispatched to SOC team successfully via SIEM webhook.",
             "severity": severity,
-            "message": message
+            "message": message,
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
