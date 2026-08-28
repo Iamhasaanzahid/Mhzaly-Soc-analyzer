@@ -1,10 +1,48 @@
 # osint_dorks.py - Advanced OSINT & Google Dorking Reconnaissance Module for MHZALY-SOC
 
+import streamlit as pd
 import streamlit as st
 import pandas as pd
 import urllib.parse
+import sqlite3
+from datetime import datetime
+
+class OSINTDatabaseManager:
+    def __init__(self, db_path="soc_osint.db"):
+        self.db_path = db_path
+        self._init_db()
+
+    def _get_connection(self):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _init_db(self):
+        with self._get_connection() as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS osint_scans (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    target_domain TEXT,
+                    category TEXT,
+                    vector_objective TEXT,
+                    risk_rating TEXT,
+                    payload TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
+
+    def log_recon_query(self, domain, category, objective, risk, payload):
+        with self._get_connection() as conn:
+            conn.execute(
+                "INSERT INTO osint_scans (target_domain, category, vector_objective, risk_rating, payload) VALUES (?, ?, ?, ?, ?)",
+                (domain, category, objective, risk, payload)
+            )
+            conn.commit()
 
 def render_osint_dorks_module():
+    db_manager = OSINTDatabaseManager()
+
     st.title("🌐 OSINT & Google Dorking Reconnaissance")
     st.markdown("Automate open-source intelligence footprinting and defensive reconnaissance queries for target assets.")
 
@@ -55,6 +93,9 @@ def render_osint_dorks_module():
         encoded_query = urllib.parse.quote(final_query)
         search_url = f"https://www.google.com/search?q={encoded_query}"
         
+        # Log query to SQLite database for audit trail
+        db_manager.log_recon_query(clean_domain, selected_category, name, risk, final_query)
+
         recon_records.append({
             "Vector Objective": name,
             "Risk Rating": risk,
