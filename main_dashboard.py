@@ -282,6 +282,16 @@ class SOCDashboardUI:
             color: #2dd4bf;
             background: rgba(45, 212, 191, 0.08);
         }
+
+        /* MUST stay last: restore Streamlit's Material icon font so the
+           sidebar collapse arrow / expander chevrons render as icons
+           instead of raw text like "keyboard_double_arrow_left". Our
+           Inter font-family override above otherwise wins the cascade. */
+        [data-testid="stIconMaterial"],
+        span[class*="material-icons"],
+        span[class*="material-symbols"] {
+            font-family: 'Material Symbols Rounded', 'Material Symbols Outlined', 'Material Icons' !important;
+        }
         </style>
         """, unsafe_allow_html=True)
 
