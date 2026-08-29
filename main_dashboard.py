@@ -166,13 +166,23 @@ class SOCDashboardUI:
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-        html, body, [data-testid="stAppViewContainer"], .stApp {
-            font-family: 'Inter', sans-serif !important;
-        }
-
         .stApp {
             background: #0d1017 !important;
             color: #e5e7eb !important;
+        }
+
+        /* Apply the custom font only to actual text content — never to
+           html/body/stApp directly. Streamlit's own icon elements (sidebar
+           collapse arrow, expander chevrons) inherit their font from a
+           common ancestor too, so a blanket rule on html/body ends up
+           overriding their icon font and makes them print as raw text
+           like "keyboard_double_arrow_left" instead of an arrow glyph. */
+        .stMarkdown, .stMarkdown p, .stMarkdown li, .stMarkdown span,
+        .stText, .stCaption, .stTabs, .stExpander summary span,
+        h1, h2, h3, h4, h5, h6,
+        .stButton > button, .stDownloadButton > button,
+        [data-testid="stMetricLabel"], [data-testid="stMetricValue"] {
+            font-family: 'Inter', sans-serif !important;
         }
 
         /* Sidebar */
@@ -180,7 +190,9 @@ class SOCDashboardUI:
             background: #0a0c12 !important;
             border-right: 1px solid #1e2330 !important;
         }
-        [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label {
+        [data-testid="stSidebar"] p,
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] span:not([data-testid="stIconMaterial"]) {
             color: #9ca3af !important;
             font-family: 'Inter', sans-serif !important;
         }
