@@ -144,7 +144,7 @@ class SOCDashboardUI:
 
     def __init__(self):
         self.app_name = "MHZALY Enterprise SOC & Threat Defense Platform"
-        self.version = "35.0 Elite Real-World Production Edition"
+        self.version = "35.1 Elite Real-World Production Edition"
 
         # Initialize Engines safely
         self.processor = ThreatIntelProcessor()
@@ -172,11 +172,28 @@ class SOCDashboardUI:
         }
 
         .stMarkdown, .stMarkdown p, .stMarkdown li, .stMarkdown span,
-        .stText, .stCaption, .stTabs, .stExpander summary span,
+        .stText, .stCaption, .stTabs,
         h1, h2, h3, h4, h5, h6,
         .stButton > button, .stDownloadButton > button,
         [data-testid="stMetricLabel"], [data-testid="stMetricValue"] {
             font-family: 'Inter', sans-serif !important;
+        }
+
+        /* FIX FOR EXPANDER TEXT OVERLAP & ARROW GLYPHS */
+        [data-testid="stExpander"] {
+            background-color: #131722 !important;
+            border: 1px solid #232838 !important;
+            border-radius: 8px !important;
+        }
+        
+        [data-testid="stExpander"] details summary {
+            font-family: 'Inter', sans-serif !important;
+            color: #2dd4bf !important;
+            font-weight: 600 !important;
+        }
+
+        [data-testid="stExpander"] details summary svg {
+            fill: #2dd4bf !important;
         }
 
         /* Sidebar Styling */
@@ -185,8 +202,7 @@ class SOCDashboardUI:
             border-right: 1px solid #1e2330 !important;
         }
         [data-testid="stSidebar"] p,
-        [data-testid="stSidebar"] label,
-        [data-testid="stSidebar"] span:not([data-testid="stIconMaterial"]) {
+        [data-testid="stSidebar"] label {
             color: #9ca3af !important;
             font-family: 'Inter', sans-serif !important;
         }
@@ -194,7 +210,7 @@ class SOCDashboardUI:
             padding: 4px 0;
         }
 
-        /* Form Inputs & Text Fields - Fix Overlapping/Blank Fields */
+        /* Inputs & Text Fields */
         .stTextInput>div>div>input, .stTextArea>div>div>textarea, .stSelectbox>div>div>div {
             background-color: #151925 !important;
             color: #ffffff !important;
@@ -208,7 +224,7 @@ class SOCDashboardUI:
             box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.4) !important;
         }
 
-        /* Interactive Buttons */
+        /* Buttons */
         .stButton>button {
             background: #1f6feb !important;
             color: #ffffff !important;
@@ -288,12 +304,6 @@ class SOCDashboardUI:
             border: 1px solid #2dd4bf;
             color: #2dd4bf;
             background: rgba(45, 212, 191, 0.08);
-        }
-
-        [data-testid="stIconMaterial"],
-        span[class*="material-icons"],
-        span[class*="material-symbols"] {
-            font-family: 'Material Symbols Rounded', 'Material Symbols Outlined', 'Material Icons' !important;
         }
         </style>
         """, unsafe_allow_html=True)
